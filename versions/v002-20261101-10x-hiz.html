@@ -1,0 +1,1125 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#071719">
+<title>Logo Arena — Dönen Kale</title>
+<style>
+  :root { color-scheme: dark; --cream:#eef5ed; --muted:#91a9a5; --panel-w:380px; }
+  * { box-sizing:border-box; }
+  html { height:100%; }
+  body { margin:0; min-height:100%; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; color:var(--cream); background: radial-gradient(circle at 15% 50%, #164344 0,transparent 35%), radial-gradient(circle at 85% 45%, #312b26 0,transparent 36%),#061315; display:grid; place-items:center; overflow:hidden; }
+
+  /* ---------- Sahne (9:16 short) ---------- */
+  .stage { position:relative; isolation:isolate; width:min(100vw, 430px, calc(100dvh * 9 / 16)); aspect-ratio:9/16; overflow:hidden; background:radial-gradient(ellipse at 50% 52%,#1d4440 0,#102e2d 37%,#081e20 70%,#07191a 100%); box-shadow:0 24px 100px #0009, 0 0 0 1px #ffffff14; user-select:none; transition:transform .4s cubic-bezier(.2,.8,.2,1); }
+  @media (min-width:820px) { body.panel-open .stage { transform:translateX(min(0px, calc((100vw - 430px) / 2 - var(--panel-w) - 16px))); } }
+  .stage:before { content:""; position:absolute; inset:0; z-index:0; pointer-events:none; opacity:.28; background:repeating-linear-gradient(0deg,transparent 0px,transparent 3px,#ffffff08 4px), radial-gradient(circle at 50% 38%,#74e3b718,transparent 55%); }
+  .stage:after { content:""; position:absolute; inset:10px; border:1px solid #d4fff014; pointer-events:none; z-index:5; }
+  canvas { position:absolute; inset:0; width:100%; height:100%; z-index:1; }
+  .top { position:absolute; top:4.25%; left:8%; right:8%; z-index:2; display:flex; align-items:center; justify-content:space-between; }
+  .brand { display:flex; align-items:center; gap:8px; color:#d6f8e9; font-size:10px; font-weight:900; letter-spacing:.24em; cursor:default; }
+  .brand-mark { width:19px; height:19px; border:2px solid #b2efcf; border-radius:50%; display:grid; place-items:center; }
+  .brand-mark:after {content:""; width:5px;height:5px;background:#b2efcf;border-radius:50%;}
+  .edition { font-size:9px; letter-spacing:.18em; font-weight:800; color:#9cb6ad; border:1px solid #a5d7c344; border-radius:3px; padding:7px 9px; }
+  h1 { position:absolute; z-index:2; top:9.1%; width:100%; margin:0; padding:0 6%; text-align:center; font-size:clamp(19px, 5.5vw, 27px); line-height:1.03; font-weight:950; letter-spacing:-.055em; text-transform:uppercase; text-shadow:0 4px 18px #0007; overflow-wrap:anywhere; }
+  h1 em { font-style:normal; color:#a5e4c7; }
+  .cardrow { position:absolute; z-index:2; top:17.2%; left:4.5%; right:4.5%; display:flex; justify-content:space-between; pointer-events:none; }
+  .cardgroup { display:flex; gap:10px; align-items:center; }
+  .cardgroup.right { justify-content:flex-end; }
+  .cchip { display:flex; align-items:center; gap:5px; opacity:.4; transition:opacity .25s; }
+  .cchip.has { opacity:1; }
+  .cchip i { display:block; width:10px; height:14px; border-radius:2px; transform:rotate(-8deg); }
+  .cchip.y i { background:#ffe05b; box-shadow:0 0 8px #ffe05b99; }
+  .cchip.r i { background:#ff3b50; box-shadow:0 0 8px #ff3b5099; }
+  .cchip b { font-size:12px; font-weight:900; font-variant-numeric:tabular-nums; color:#e8fff6; line-height:1; min-width:8px; text-align:center; }
+  .cchip.pop { animation:cardPop .7s ease-out; }
+  @keyframes cardPop { 0%{transform:scale(1)} 25%{transform:scale(1.6)} 100%{transform:scale(1)} }
+  /* Atılan gollerin dakikaları: takımın olduğu tarafta, sola / sağa dayalı */
+  .goalrow { position:absolute; z-index:2; top:19.8%; left:4.5%; right:4.5%; display:flex; justify-content:space-between; align-items:flex-start; gap:16px; pointer-events:none; }
+  .goallist { display:flex; flex-wrap:nowrap; align-items:center; gap:2px; max-width:49%; min-height:14px; overflow:hidden; }
+  .goallist.right { justify-content:flex-end; }
+  .gmin { display:inline-flex; align-items:center; gap:2px; flex:none; padding:2px 3px; border:1px solid currentColor; border-radius:3px; background:#071d1de6; font:900 8px/1 Inter, ui-sans-serif, system-ui, sans-serif; letter-spacing:.01em; font-variant-numeric:tabular-nums; box-shadow:0 0 9px -3px currentColor; }
+  .gmin i { width:3px; height:3px; border-radius:50%; background:currentColor; box-shadow:0 0 6px currentColor; flex:none; }
+  .goallist.tight .gmin { padding:1px 2px; font-size:7.5px; border-radius:2px; }
+  .goallist.tight .gmin i { display:none; }
+  .gmin.more { border-color:#7fae9e55; color:#9cc4b7 !important; background:#07201fe6; box-shadow:none; }
+  .gmin.more i { display:none; }
+  .gmin.pop { animation:goalPop .55s cubic-bezier(.2,1.4,.4,1); }
+  @keyframes goalPop { 0%{transform:scale(.35);opacity:0} 55%{transform:scale(1.24);opacity:1} 100%{transform:scale(1);opacity:1} }
+  .midline { position:absolute; z-index:2; top:22.4%; left:5%; right:5%; text-align:center; }
+  .scoreboard { position:absolute; z-index:3; top:7%; left:8%; right:8%; height:9.6%; display:grid; grid-template-columns:minmax(0,1fr) 86px minmax(0,1fr); align-items:center; border-top:1px solid #00ffd5; border-bottom:1px solid #00ffd5; box-shadow:0 0 12px rgba(0,255,213,.3), inset 0 0 14px rgba(0,255,213,.06); background:linear-gradient(90deg,#fc93550d,#ffffff08 50%,#00ffd50d); }
+  .team { display:grid; grid-template-columns:auto auto; align-items:center; justify-items:center; column-gap:9px; row-gap:2px; min-width:0; }
+  .team .badge { grid-column:2; grid-row:1; }
+  .team .team-score { grid-column:1; grid-row:1; }
+  .team .team-name { grid-column:2; grid-row:2; text-align:center; }
+  .team.right .badge { grid-column:1; grid-row:1; }
+  .team.right .team-score { grid-column:2; grid-row:1; }
+  .team.right .team-name { grid-column:1; grid-row:2; text-align:center; }
+  .badge { width:30px; height:30px; flex:none; border-radius:50%; display:grid; place-items:center; overflow:hidden; background:#112c2c; border:1px solid currentColor; box-shadow:0 0 14px currentColor; transition:color .25s, box-shadow .25s; }
+  .badge svg {width:18px;height:18px;fill:currentColor;}
+  .badge img {width:100%;height:100%;object-fit:cover;border-radius:50%;}
+  .badge-letter {font-weight:950;font-size:14px;letter-spacing:-.04em;}
+  .team-name {display:block;max-width:100%;font-size:9px;letter-spacing:.16em;font-weight:850;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-transform:uppercase;}
+  .team-score {display:block;font-size:29px;font-weight:950;line-height:1;letter-spacing:-.08em;}
+  .timer-box {text-align:center;border-left:1px solid rgba(0,255,213,.35);border-right:1px solid rgba(0,255,213,.35);padding:4px 0;}
+  .timer-label {display:block;font-size:8px;color:#b3c8bd;letter-spacing:.18em;font-weight:800;margin-bottom:2px;}
+  #timer {font-size:18px;font-weight:900;font-variant-numeric:tabular-nums;letter-spacing:.02em;}
+  .bottom {position:absolute;z-index:3;left:8%;right:8%;bottom:3.2%;text-align:center;}
+  .status {font-weight:950;font-size:clamp(16px,4.8vw,22px);letter-spacing:-.045em;line-height:1.08;text-transform:uppercase;min-height:27px;transition:color .2s;overflow-wrap:anywhere;text-shadow:0 0 18px rgba(0,255,213,.4);}
+  .controls {display:flex;justify-content:center;gap:8px;}
+  .controls button {appearance:none;border:1px solid #a0dbbd55;border-radius:5px;background:#b8e7cd;color:#0b2927;min-width:114px;height:36px;font:850 10px/1 inherit;letter-spacing:.13em;cursor:pointer;transition:transform .2s,background .2s;}
+  .controls button:hover {transform:translateY(-2px);background:#d9ffe8;box-shadow:0 0 14px rgba(0,255,213,.4);}
+  .controls button:focus-visible {outline:2px solid #00ffd5;outline-offset:3px;}
+  .controls button.secondary {background:#163531d9;color:#dcf2e5;min-width:100px;}
+  .controls button.secondary:hover {background:#245047;}
+  /* Tek Renk Neon Geri Sayım Çubuğu (Lazer / Parlama Efektli - Ateşsiz) */
+  .fuse-wrap {position:absolute;z-index:4;bottom:0;left:0;width:100%;height:6px;pointer-events:none;}
+  .fuse-track {position:relative;width:100%;height:100%;background:#041514;border-top:1px solid rgba(0,255,213,.25);box-shadow:0 -1px 8px rgba(0,255,213,.15);overflow:visible;}
+  .fuse-bar {position:absolute;top:0;left:0;bottom:0;width:100%;background:linear-gradient(90deg,rgba(0,255,213,.35) 0%,rgba(0,255,213,.75) 50%,#00ffd5 85%,#ffffff 100%);box-shadow:0 0 8px #00ffd5, 0 0 16px #00ffd5, 0 0 28px rgba(0,255,213,.55), inset 0 1px 1px #ffffff;border-radius:0 3px 3px 0;animation:neonPulse 1.6s infinite ease-in-out alternate;}
+  .neon-tip {position:absolute;top:50%;right:-4px;width:8px;height:8px;transform:translateY(-50%);pointer-events:none;transition:opacity .15s;}
+  .neon-point {position:absolute;inset:0;border-radius:50%;background:#ffffff;box-shadow:0 0 5px #ffffff, 0 0 10px #00ffd5, 0 0 18px #00ffd5;}
+  .neon-halo {position:absolute;inset:-5px;border-radius:50%;background:radial-gradient(circle,rgba(0,255,213,.65) 0%,transparent 70%);}
+  @keyframes neonPulse {0%{filter:brightness(1) drop-shadow(0 0 3px #00ffd5);}100%{filter:brightness(1.2) drop-shadow(0 0 8px #00ffd5);}}
+  .goal-overlay {position:absolute;inset:0;z-index:2;pointer-events:none;display:grid;place-items:center;opacity:0;transition:opacity .18s;background:radial-gradient(circle at 50% 52%,#d7fff224,transparent 55%);}
+  .goal-overlay.visible {opacity:1;}
+  .call-card {display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;max-width:92%;text-align:center;filter:drop-shadow(0 12px 18px #0009);}
+  .call-kicker {color:#effff4;font-size:10px;font-weight:950;letter-spacing:.34em;line-height:1;text-shadow:0 2px 10px #000c;}
+  .call-icon {display:block;font-size:clamp(38px,10vw,50px);line-height:1;filter:drop-shadow(0 0 14px var(--call-glow,rgba(0,255,213,.42)));transform:scale(.72);transition:transform .24s cubic-bezier(.2,1.5,.4,1);}
+  .goal-overlay.visible .call-icon {transform:scale(1);}
+  .goal-overlay .call-icon svg { display:block; width:clamp(46px,12vw,58px); height:auto; }
+  .goal-word {font-size:clamp(66px,19vw,92px);font-weight:1000;letter-spacing:-.11em;font-style:italic;transform:rotate(-9deg) scale(.7);text-shadow:0 6px 0 #0d3c37,0 14px 36px #000b;-webkit-text-stroke:1px #fff8;transition:transform .22s cubic-bezier(.2,1.5,.4,1);}
+  .goal-overlay.visible .goal-word {transform:rotate(-9deg) scale(1);}
+  .call-sub {color:#e8f5ed;font-size:11px;font-weight:850;letter-spacing:.15em;line-height:1.25;text-shadow:0 2px 8px #000b;}
+  /* ---------- VAR: gol kontrol ekranı ---------- */
+  .goal-overlay.var-mode { overflow:hidden; background:radial-gradient(circle at 50% 50%,rgba(6,34,34,.64),rgba(2,10,11,.88)); backdrop-filter:blur(1.5px); }
+  .goal-overlay.var-mode:before { content:""; position:absolute; inset:0; z-index:0; pointer-events:none; background:repeating-linear-gradient(0deg,transparent 0 4px,rgba(0,255,213,.085) 4px 5px); }
+  .goal-overlay.var-mode:after { content:""; position:absolute; left:-12%; right:-12%; top:0; height:24%; z-index:0; pointer-events:none; background:linear-gradient(180deg,transparent,rgba(0,255,213,.22) 55%,transparent); animation:varScan 1.1s linear infinite; }
+  @keyframes varScan { from{transform:translateY(-40%)} to{transform:translateY(460%)} }
+  .goal-overlay.var-mode .call-card { position:relative; z-index:2; }
+  .var-frame { display:none; }
+  .goal-overlay.var-mode .var-frame { display:block; position:absolute; inset:5.5% 6.5%; z-index:1; border:1px solid #00ffd540; border-radius:7px; }
+  .goal-overlay.var-mode .var-frame:before,.goal-overlay.var-mode .var-frame:after { content:""; position:absolute; width:20px; height:20px; border:2px solid #00ffd5; }
+  .goal-overlay.var-mode .var-frame:before { top:-1px; left:-1px; border-right:0; border-bottom:0; border-radius:4px 0 0 0; }
+  .goal-overlay.var-mode .var-frame:after { bottom:-1px; right:-1px; border-left:0; border-top:0; border-radius:0 0 4px 0; }
+  .var-strip { display:none; align-items:center; gap:6px; padding:4px 10px; border-radius:999px; border:1px solid #ff5d6e88; background:#2a0d12e6; color:#ffd7dc; font-size:8px; font-weight:950; letter-spacing:.22em; line-height:1; }
+  .var-strip i { width:5px; height:5px; border-radius:50%; background:#ff4b5c; box-shadow:0 0 8px #ff4b5c; animation:varLive .8s steps(2,end) infinite; }
+  @keyframes varLive { 50%{opacity:.15} }
+  .goal-overlay.var-mode .var-strip { display:inline-flex; }
+  .var-steps { display:none; gap:5px; margin-top:3px; }
+  .goal-overlay.var-mode .var-steps { display:inline-flex; }
+  .var-steps i { width:26px; height:3px; border-radius:2px; background:#ffffff26; animation:varStep .9s ease-in-out infinite; }
+  .var-steps i:nth-child(2){ animation-delay:.2s } .var-steps i:nth-child(3){ animation-delay:.4s }
+  @keyframes varStep { 0%,100%{background:#ffffff26;box-shadow:none} 45%{background:#00ffd5;box-shadow:0 0 8px #00ffd5} }
+  .goal-overlay.var-mode:not(.var-done) .goal-word { font-style:normal; font-size:clamp(58px,17vw,84px); letter-spacing:.05em; -webkit-text-stroke:2px #eafff62e; transform:scale(.9); }
+  .goal-overlay.var-mode.visible:not(.var-done) .goal-word { transform:scale(1); }
+  .goal-overlay.var-done .goal-word { font-style:italic; letter-spacing:-.1em; -webkit-text-stroke:1px #fff8; }
+  .goal-overlay.var-cancel .goal-word { font-size:clamp(50px,14vw,72px); }
+  .goal-overlay.var-valid.var-done.visible .goal-word { transform:rotate(-9deg) scale(1); }
+  .goal-overlay.var-cancel.var-done.visible .goal-word { transform:scale(1); }
+  .goal-overlay.var-cancel { background:radial-gradient(circle at 50% 50%,rgba(64,10,18,.64),rgba(12,3,6,.9)); }
+  .goal-overlay.var-cancel:before { background:repeating-linear-gradient(0deg,transparent 0 4px,rgba(255,75,92,.1) 4px 5px); }
+  .goal-overlay.var-cancel:after { display:none; }
+  .goal-overlay.var-cancel .var-frame { border-color:#ff4b5c40; }
+  .goal-overlay.var-cancel .var-frame:before,.goal-overlay.var-cancel .var-frame:after { border-color:#ff4b5c; }
+  .goal-overlay.var-done .var-steps i { animation:none; background:#00ffd5; box-shadow:0 0 8px #00ffd5; }
+  .goal-overlay.var-cancel .var-steps i { background:#ff4b5c; box-shadow:0 0 8px #ff4b5c; }
+  .goal-overlay.var-valid .var-strip { border-color:#00ffd5aa; background:#062e2ae6; color:#d6fff2; }
+  .goal-overlay.var-valid .var-strip i { background:#00ffd5; box-shadow:0 0 8px #00ffd5; animation:none; }
+  .goal-overlay.var-cancel .var-strip { border-color:#ff5d6e; background:#3a0d14e6; }
+  .event-banner {position:absolute;z-index:3;top:25.2%;left:50%;display:flex;align-items:center;gap:10px;max-width:88%;min-height:53px;padding:8px 13px;border:1px solid var(--event-color,#ffd166);border-radius:8px;background:linear-gradient(115deg,#071a1bf2,#12312ff2);box-shadow:0 8px 25px #0008,0 0 18px var(--event-glow,rgba(255,209,102,.22));opacity:0;pointer-events:none;transform:translate(-50%,-8px) scale(.96);transition:opacity .16s,transform .23s cubic-bezier(.2,.8,.2,1);}
+  .event-banner.visible {opacity:1;transform:translate(-50%,0) scale(1);}
+  .event-icon {flex:none;font-size:28px;line-height:1;filter:drop-shadow(0 0 8px var(--event-glow,rgba(255,209,102,.25)));}
+  .event-copy {display:flex;flex-direction:column;gap:3px;min-width:0;}
+  .event-kicker {color:#a8c7bc;font-size:7px;font-weight:900;letter-spacing:.22em;line-height:1;}
+  .event-word {color:var(--event-color,#ffd166);font-size:15px;font-weight:1000;letter-spacing:.045em;line-height:1;text-shadow:0 0 12px var(--event-glow,rgba(255,209,102,.3));white-space:nowrap;}
+  .event-sub {color:#e2f1e8;font-size:9px;font-weight:800;letter-spacing:.08em;line-height:1.1;white-space:nowrap;}
+  @media(max-height:630px) { .controls {margin-top:9px} .bottom {bottom:3%} }
+
+  /* ---------- Yönetim paneli ---------- */
+  .admin-toggle { position:fixed; top:14px; right:14px; z-index:45; display:inline-flex; align-items:center; gap:8px; height:40px; padding:0 15px 0 12px; border-radius:999px; background:#0e2a2ccc; border:1px solid #a5d7c355; color:#d9fff0; font:850 10px/1 inherit; letter-spacing:.16em; backdrop-filter:blur(8px); box-shadow:0 8px 30px #0008; cursor:pointer; transition:transform .2s, background .2s; }
+  .admin-toggle:hover { transform:translateY(-1px); background:#164140; }
+  .admin-toggle .gear { font-size:15px; line-height:1; display:inline-block; transition:transform .5s; }
+  .admin-toggle:hover .gear { transform:rotate(90deg); }
+  body.hide-admin-btn .admin-toggle { display:none; }
+  .admin-backdrop { position:fixed; inset:0; z-index:48; background:#02090aa6; backdrop-filter:blur(2px); opacity:0; pointer-events:none; transition:opacity .3s; }
+  body.panel-open .admin-backdrop { opacity:1; pointer-events:auto; }
+  .admin { position:fixed; top:0; right:0; height:100dvh; width:min(100vw, var(--panel-w)); z-index:50; display:flex; flex-direction:column; background:linear-gradient(180deg,#0b2527,#071a1c 60%,#06161a); border-left:1px solid #a5d7c333; box-shadow:-20px 0 60px #0009; transform:translateX(102%); transition:transform .38s cubic-bezier(.2,.8,.2,1); color:#e4f6ec; }
+  body.panel-open .admin { transform:none; }
+  .admin :focus-visible { outline:2px solid #9ce9bb; outline-offset:2px; }
+  .admin-head { display:flex; align-items:flex-start; justify-content:space-between; gap:12px; padding:18px 18px 14px; border-bottom:1px solid #a5d7c322; }
+  .admin-kicker { font-size:9px; letter-spacing:.26em; font-weight:900; color:#8fd3b6; margin-bottom:5px; }
+  .admin-head h2 { margin:0; font-size:18px; font-weight:950; letter-spacing:-.03em; }
+  .admin-head p { margin:5px 0 0; font-size:11px; color:#9bb5aa; line-height:1.4; }
+  .icon-btn { flex:none; width:36px; height:36px; border-radius:8px; border:1px solid #a5d7c333; background:#0f2d2e; color:#d9fff0; font-size:14px; cursor:pointer; }
+  .icon-btn:hover { background:#1a4542; }
+  .admin-body { flex:1; overflow:auto; padding:14px 18px 20px; display:flex; flex-direction:column; gap:12px; scrollbar-width:thin; scrollbar-color:#2f6a60 transparent; }
+  .card { border:1px solid #a5d7c326; border-radius:12px; background:#0d2729aa; padding:14px; }
+  .card-head { display:flex; align-items:center; gap:10px; margin-bottom:12px; }
+  .card-head h3 { margin:0; font-size:10px; letter-spacing:.22em; font-weight:900; color:#cfeee0; }
+  .card-head .sub { margin-left:auto; font-size:10px; color:#8fb3a6; letter-spacing:.04em; }
+  .swatch { width:12px; height:12px; border-radius:50%; background:currentColor; box-shadow:0 0 10px currentColor; transition:color .25s; }
+  .field { display:block; margin-bottom:11px; }
+  .field > span, .field-label { display:block; font-size:9px; letter-spacing:.2em; font-weight:800; color:#9fc4b6; margin-bottom:6px; text-transform:uppercase; }
+  .field input[type=text] { width:100%; height:40px; border-radius:8px; border:1px solid #a5d7c33a; background:#07191b; color:#eefcf4; font:800 14px/1 inherit; letter-spacing:.06em; padding:0 12px; text-transform:uppercase; outline:none; transition:border-color .2s, box-shadow .2s; }
+  .field input[type=text]::placeholder { color:#4f7a6e; }
+  .field input[type=text]:focus { border-color:#9ce9bb; box-shadow:0 0 0 3px #9ce9bb22; }
+  .color-row { display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+  .color-row input[type=color] { width:42px; height:34px; padding:2px; border:1px solid #a5d7c33a; border-radius:8px; background:#07191b; cursor:pointer; }
+  .presets { display:flex; gap:7px; flex-wrap:wrap; }
+  .preset { width:22px; height:22px; border-radius:50%; border:2px solid #ffffff22; cursor:pointer; padding:0; transition:transform .15s; }
+  .preset:hover { transform:scale(1.15); }
+  .preset.active { border-color:#fff; box-shadow:0 0 0 2px #07191b, 0 0 0 4px currentColor; }
+  .logo-grid { display:grid; grid-template-columns:repeat(5,1fr); gap:6px; }
+  .logo-opt { aspect-ratio:1; border-radius:9px; border:1px solid #a5d7c333; background:#07191b; display:grid; place-items:center; cursor:pointer; color:#cfeee0; font:inherit; padding:0; margin:0; position:relative; overflow:hidden; transition:border-color .15s, background .15s, transform .15s; }
+  .logo-opt svg { width:22px; height:22px; fill:currentColor; }
+  .logo-opt:hover { background:#133634; transform:translateY(-1px); }
+  .logo-opt.active { border-color:currentColor; background:#133634; box-shadow:inset 0 0 14px -2px currentColor; }
+  .logo-opt .letter { font-weight:950; font-size:15px; letter-spacing:-.04em; }
+  .logo-opt .up { font-size:8px; font-weight:900; letter-spacing:.08em; line-height:1.25; text-align:center; }
+  .logo-opt img { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; }
+  .logo-opt input[type=file] { position:absolute; inset:0; opacity:0; cursor:pointer; width:100%; height:100%; }
+  .logo-help { font-size:10px; color:#8fb3a6; margin-top:8px; line-height:1.4; }
+  .scale-field { margin-top:14px; margin-bottom:0; padding-top:12px; border-top:1px dashed #a5d7c322; }
+  .scale-block { display:grid; grid-template-columns: 104px 1fr; gap:12px; align-items:center; }
+  .preview-wrap { display:flex; flex-direction:column; align-items:center; gap:6px; }
+  .preview-wrap canvas { width:104px; height:104px; border-radius:50%; display:block; background:#07191b; border:1px solid #a5d7c333; box-shadow:inset 0 0 22px #0007, 0 0 18px #0004; overflow:hidden; }
+  .scale-caption { font-size:8px; letter-spacing:.2em; font-weight:900; color:#7ea898; text-transform:uppercase; }
+  .scale-side { min-width:0; }
+  .scale-marks { display:flex; justify-content:space-between; font-size:9px; letter-spacing:.14em; font-weight:800; color:#6f9488; text-transform:uppercase; margin-top:5px; }
+  .scale-field input[type=range] { height:18px; cursor:pointer; }
+  @media (max-width:360px){ .scale-block { grid-template-columns:1fr; justify-items:center; } .scale-side { width:100%; } }
+  .range-row { display:flex; align-items:center; gap:10px; }
+  .range-row input[type=range] { flex:1; accent-color:#9ce9bb; margin:0; }
+  .range-val { min-width:46px; text-align:right; font-weight:900; font-variant-numeric:tabular-nums; font-size:13px; }
+  .field-head-row { display:flex; align-items:baseline; justify-content:space-between; margin-bottom:5px; }
+  .field-head-row .field-label { margin-bottom:0; }
+  .field-head-row .range-val { font-size:11px; color:#b8e7cd; font-weight:800; min-width:auto; text-align:right; }
+  .dur-presets { display:grid; grid-template-columns:repeat(6,1fr); gap:4px; margin-top:6px; }
+  .dur-presets button { height:26px; border-radius:6px; border:1px solid #a5d7c32b; background:#07191b; color:#95c6b4; font:750 10px/1 inherit; letter-spacing:.06em; cursor:pointer; transition:all .15s; }
+  .dur-presets button:hover { background:#113331; color:#dcfaed; border-color:#a5d7c355; }
+  .dur-presets button.active { background:#1e524d; color:#8affcf; border-color:#00ffd5; box-shadow:0 0 8px rgba(0,255,213,.25); }
+  .seg { display:grid; grid-template-columns:repeat(3,1fr); gap:6px; }
+  .seg.seg-10 { display:grid; grid-template-columns:repeat(10,1fr); gap:3px; }
+  .seg button { height:34px; border-radius:8px; border:1px solid #a5d7c333; background:#07191b; color:#cfeee0; font:850 10px/1 inherit; letter-spacing:.12em; cursor:pointer; transition:background .15s; }
+  .seg.seg-10 button { height:34px; font-size:11px; font-weight:850; letter-spacing:0; }
+  .seg button:hover { background:#133634; }
+  .seg button.active { background:#b8e7cd; color:#0b2927; border-color:#b8e7cd; box-shadow:0 0 10px rgba(184,231,205,.3); }
+  .goal-odds { margin-top:12px; padding-top:11px; border-top:1px dashed #a5d7c322; }
+  .goal-odds-head { display:flex; justify-content:space-between; gap:8px; color:#8fb3a6; font-size:8px; font-weight:900; letter-spacing:.12em; }
+  .goal-odds-head span:last-child { color:#72d7b2; text-align:right; }
+  .goal-odds-grid { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:5px; margin-top:8px; }
+  .goal-odd { display:flex; flex-direction:column; align-items:center; gap:4px; padding:7px 3px; border:1px solid #a5d7c322; border-radius:7px; background:#07191b; }
+  .goal-odd b { color:#e9fff4; font-size:11px; font-weight:950; font-variant-numeric:tabular-nums; }
+  .goal-odd small { color:#8be8bf; font-size:9px; font-weight:900; }
+  .goal-odds p { margin:8px 0 0; color:#8fb3a6; font-size:9px; line-height:1.4; }
+  .check { display:flex; align-items:flex-start; gap:10px; font-size:12px; line-height:1.4; color:#cfe6da; cursor:pointer; }
+  .check input { margin:2px 0 0; accent-color:#9ce9bb; flex:none; }
+  .check small { display:block; color:#8fb3a6; font-size:10.5px; margin-top:3px; }
+  .check b { color:#d9fff0; }
+  .card-team-row { display:flex; align-items:center; gap:9px; margin-bottom:10px; }
+  .card-team-row .dot { width:11px; height:11px; border-radius:50%; flex:0 0 auto; }
+  .card-team-row .tname { flex:1; font-size:11px; font-weight:900; letter-spacing:.1em; color:#d9f3e6; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .numwrap { display:inline-flex; align-items:center; gap:4px; }
+  .numwrap small { font-size:11px; line-height:1; }
+  input.num { width:48px; height:34px; border-radius:8px; border:1px solid #a5d7c344; background:#08201f; color:#eafdf3; font:900 13px/1 inherit; text-align:center; }
+  input.num:focus { outline:2px solid #9ce9bb; outline-offset:1px; }
+  .card-note { font-size:10px; color:#8fb3a6; line-height:1.4; }
+  .admin-foot { padding:12px 18px calc(12px + env(safe-area-inset-bottom)); border-top:1px solid #a5d7c322; background:#06161a; }
+  .foot-row { display:grid; grid-template-columns:1fr auto; gap:8px; }
+  .admin-foot button { height:42px; border-radius:8px; font:850 10px/1 inherit; letter-spacing:.14em; cursor:pointer; border:1px solid #a0dbbd55; transition:background .2s, transform .2s; }
+  .btn-primary { background:#b8e7cd; color:#0b2927; }
+  .btn-primary:hover { background:#d9ffe8; transform:translateY(-1px); }
+  .btn-ghost { background:#163531d9; color:#dcf2e5; padding:0 14px; }
+  .btn-ghost:hover { background:#245047; }
+  .btn-ghost.armed { border-color:#ff8f8f88; color:#ffd2d2; background:#3a1d1d; }
+  .saved-note { font-size:10px; color:#8fb3a6; text-align:center; margin-top:9px; min-height:13px; transition:color .2s; }
+  .saved-note.ok { color:#9ce9bb; }
+</style>
+</head>
+<body>
+<main class="stage" aria-label="İki logonun çember içinde sektiği, çemberin çizgisi üzerinde dönen kaleli logo arenası">
+  <canvas id="game" width="800" height="1422" aria-hidden="true"></canvas>
+  <div class="scoreboard" aria-live="polite">
+    <div class="team"><span class="badge" id="badge0"></span><span class="team-score" id="score0">0</span><span class="team-name" id="name0">ALEV</span></div>
+    <div class="timer-box"><span class="timer-label" id="timerLabel">1. YARI</span><span id="timer">1'</span></div>
+    <div class="team right"><span class="badge" id="badge1"></span><span class="team-score" id="score1">0</span><span class="team-name" id="name1">ŞİMŞEK</span></div>
+  </div>
+  <div class="cardrow" aria-label="Kart sayıları">
+    <div class="cardgroup left"><span class="cchip y" id="y0" title="Sarı kart"><i></i><b>0</b></span><span class="cchip r" id="r0" title="Kırmızı kart"><i></i><b>0</b></span></div>
+    <div class="cardgroup right"><span class="cchip y" id="y1" title="Sarı kart"><i></i><b>0</b></span><span class="cchip r" id="r1" title="Kırmızı kart"><i></i><b>0</b></span></div>
+  </div>
+  <div class="goalrow" aria-label="Gol dakikaları">
+    <div class="goallist left" id="goals0"></div>
+    <div class="goallist right" id="goals1"></div>
+  </div>
+  <div class="midline" aria-live="polite"><div class="status" id="status">İLK GOLÜ KİM ATACAK?</div></div>
+  <div class="event-banner" id="eventBanner" aria-live="polite"><span class="event-icon" id="eventIcon" aria-hidden="true">⚽</span><div class="event-copy"><span class="event-kicker" id="eventKicker">MAÇ ANI</span><strong class="event-word" id="eventWord">PENALTI!</strong><span class="event-sub" id="eventSub"></span></div></div>
+  <div class="goal-overlay" id="goalOverlay"><span class="var-frame" aria-hidden="true"></span><div class="call-card"><span class="var-strip"><i></i>VAR · OFSAYT KONTROLÜ</span><span class="call-kicker" id="callKicker">GOL ANI</span><span class="call-icon" id="callIcon" aria-hidden="true">⚽</span><span class="goal-word" id="goalWord">GOL!</span><span class="call-sub" id="callSub"></span><span class="var-steps" aria-hidden="true"><i></i><i></i><i></i></span></div></div>
+  <div class="bottom"><div class="controls"><button id="playBtn" type="button">⏸ &nbsp; DURAKLAT</button><button id="resetBtn" type="button" class="secondary">↻ &nbsp; YENİDEN</button></div></div>
+  <div class="fuse-wrap" id="fuseWrap" aria-hidden="true"><div class="fuse-track"><div class="fuse-bar" id="progress"><div class="neon-tip" id="fuseSpark"><span class="neon-point"></span><span class="neon-halo"></span></div></div></div></div>
+</main>
+
+<!-- Yönetim paneli: sahnenin dışında, kayda girmez -->
+<button class="admin-toggle" id="adminToggle" type="button" aria-controls="adminPanel" aria-expanded="false"><span class="gear">⚙</span> YÖNETİM</button>
+<div class="admin-backdrop" id="adminBackdrop"></div>
+<aside class="admin" id="adminPanel" aria-label="Yönetim paneli">
+  <header class="admin-head">
+    <div><div class="admin-kicker">LOGO ARENA</div><h2>Yönetim Paneli</h2><p>Takım adlarını, renkleri, logoları ve maç ayarlarını buradan değiştir. Değişiklikler sahneye anında yansır.</p></div>
+    <button class="icon-btn" id="adminClose" type="button" aria-label="Paneli kapat">✕</button>
+  </header>
+  <div class="admin-body" id="adminBody">
+    <section class="card">
+      <div class="card-head"><h3>MAÇ AYARLARI</h3><span class="sub">GOL ≤6 · 🟨 ≤6 · 🟥 ≤2</span></div>
+      <div class="field">
+        <div class="field-head-row"><span class="field-label">Maçın gerçek süresi</span><span class="range-val" id="durationVal">60 sn (Yarı: 30 sn)</span></div>
+        <div class="range-row"><input type="range" id="duration" min="10" max="180" step="5" aria-label="Maçın gerçek süresi (sn)"></div>
+        <div class="dur-presets" id="durPresets">
+          <button type="button" data-dur="20">20s</button>
+          <button type="button" data-dur="30">30s</button>
+          <button type="button" data-dur="45">45s</button>
+          <button type="button" data-dur="60">60s</button>
+          <button type="button" data-dur="90">90s</button>
+          <button type="button" data-dur="120">120s</button>
+        </div>
+      </div>
+      <div class="field" style="margin-bottom:0">
+        <div class="field-head-row"><span class="field-label">Maç hızı (10 kademe)</span><span class="range-val" id="speedVal">1x</span></div>
+        <div class="seg seg-10" id="speedSeg">
+          <button type="button" data-v="1" title="1x hız">1x</button>
+          <button type="button" data-v="2" title="2x hız">2x</button>
+          <button type="button" data-v="3" title="3x hız">3x</button>
+          <button type="button" data-v="4" title="4x hız">4x</button>
+          <button type="button" data-v="5" title="5x hız">5x</button>
+          <button type="button" data-v="6" title="6x hız">6x</button>
+          <button type="button" data-v="7" title="7x hız">7x</button>
+          <button type="button" data-v="8" title="8x hız">8x</button>
+          <button type="button" data-v="9" title="9x hız">9x</button>
+          <button type="button" data-v="10" title="10x hız">10x</button>
+        </div>
+      </div>
+      <div class="goal-odds" aria-label="Maç toplam gol olasılıkları">
+        <div class="goal-odds-head"><span>GOL DAĞILIMI · MAÇ TOPLAMI</span><span>AZALAN İHTİMAL</span></div>
+        <div class="goal-odds-grid">
+          <div class="goal-odd"><b>0–3</b><small>%70</small></div>
+          <div class="goal-odd"><b>2–3</b><small>%15</small></div>
+          <div class="goal-odd"><b>3–4</b><small>%10</small></div>
+          <div class="goal-odd"><b>4–6</b><small>%5</small></div>
+        </div>
+        <p>Maç başında profillerden biri bu ağırlıklarla seçilir. Aralık içindeki düşük skorlar daha olasıdır; toplam gol sayısı seçilen hedefi aşmaz.</p>
+      </div>
+    </section>
+    <section class="card">
+      <div class="card-head"><h3>KARTLAR</h3><span class="sub">🟨 ≤6 · 🟥 ≤2 · 0 = kartsız</span></div>
+      <div class="card-team-row"><span class="dot" id="cardDot0"></span><span class="tname" id="cardTeam0">TAKIM 1</span><label class="numwrap" title="Sarı kart sayısı"><small>🟨</small><input type="number" class="num" id="cy0" min="0" max="6" step="1" inputmode="numeric" aria-label="Takım 1 sarı kart"></label><label class="numwrap" title="Kırmızı kart sayısı"><small>🟥</small><input type="number" class="num" id="cr0" min="0" max="2" step="1" inputmode="numeric" aria-label="Takım 1 kırmızı kart"></label></div>
+      <div class="card-team-row"><span class="dot" id="cardDot1"></span><span class="tname" id="cardTeam1">TAKIM 2</span><label class="numwrap" title="Sarı kart sayısı"><small>🟨</small><input type="number" class="num" id="cy1" min="0" max="6" step="1" inputmode="numeric" aria-label="Takım 2 sarı kart"></label><label class="numwrap" title="Kırmızı kart sayısı"><small>🟥</small><input type="number" class="num" id="cr1" min="0" max="2" step="1" inputmode="numeric" aria-label="Takım 2 kırmızı kart"></label></div>
+      <div class="card-note">Kartlar maç içinde rastgele dakikalarda gösterilir. Hepsini 0 yaparsan maç kartsız oynanır.</div>
+    </section>
+    <section class="card">
+      <label class="check"><input type="checkbox" id="hideBtn"><span>Kayıt modu: YÖNETİM düğmesini gizle<small>Paneli tekrar açmak için <b>Y</b> tuşuna bas ya da sahneye çift tıkla.</small></span></label>
+    </section>
+  </div>
+  <footer class="admin-foot">
+    <div class="foot-row">
+      <button type="button" class="btn-primary" id="applyBtn">UYGULA VE YENİDEN BAŞLAT</button>
+      <button type="button" class="btn-ghost" id="defaultsBtn">VARSAYILAN</button>
+    </div>
+    <div class="saved-note" id="savedNote">Değişiklikler anında uygulanır ve bu tarayıcıda saklanır.</div>
+  </footer>
+</aside>
+
+<script>
+(() => {
+  'use strict';
+  const $=id=>document.getElementById(id);
+  const TAU=Math.PI*2;
+
+  /* =========================================================
+     AYARLAR (yönetim panelinden değişir, localStorage'da saklanır)
+     ========================================================= */
+  const STORE_KEY='logoArena.settings.v1';
+  const SPEED_CONFIG={}; for(let k=1;k<=10;k++)SPEED_CONFIG[k]={mul:k,label:k+'x',short:String(k)};
+  const spdMul=()=>(SPEED_CONFIG[settings.speed]||SPEED_CONFIG[1]).mul;
+  const spdLabel=()=>(SPEED_CONFIG[settings.speed]||SPEED_CONFIG[1]).label;
+
+  const DEFAULTS={
+    teams:[{name:'ALEV',color:'#ff8758',logo:'flame',image:null,scale:1},{name:'ŞİMŞEK',color:'#6ce5e5',logo:'bolt',image:null,scale:1}],
+    duration:60, speed:1, cardPlan:{y0:1,r0:0,y1:1,r1:0}, title1:'BİR ÇEMBER.', title2:'DÖNEN KALE.', hideButton:false
+  };
+  const ICONS={
+    flame:{label:'Alev',d:'M12.6 1.5c.6 4.3-2.4 5.7-1.1 8.2 2.1-.8 3.2-2.4 3.4-4.2 3.7 3.1 5.4 6.7 5.1 9.8-.4 4.5-3.6 7.4-8 7.4s-7.6-2.9-8-7.3C3.7 11.6 6.3 7.9 12.6 1.5Zm-.4 11.6c-2.1 2.7-3.4 4-3.1 6 .2 1.7 1.3 2.7 2.9 2.7s2.9-1.2 3-2.8c.1-1.4-.8-2.6-2.8-5.9Z'},
+    bolt:{label:'Şimşek',d:'M13.6 1 4 13.3h7L9.7 23 20 9.5h-7.2L13.6 1Z'},
+    star:{label:'Yıldız',d:'M12 1.5l3.1 6.9 7.4.8-5.5 5.1 1.5 7.4L12 18l-6.5 3.7 1.5-7.4L1.5 9.2l7.4-.8z'},
+    shield:{label:'Kalkan',d:'M12 1.5 3.5 4.8v6.2c0 5.4 3.6 10.3 8.5 11.5 4.9-1.2 8.5-6.1 8.5-11.5V4.8L12 1.5Z'},
+    crown:{label:'Taç',d:'M2.5 7l4.6 4.1L12 4l4.9 7.1L21.5 7l-2 10h-15l-2-10ZM4.5 18.5h15v2.5h-15z'},
+    heart:{label:'Kalp',d:'M12 21.3 3.6 13c-2.3-2.3-2.3-6 0-8.3 2.2-2.2 5.8-2.3 8.1-.2l.3.3.3-.3c2.3-2.1 5.9-2 8.1.2 2.3 2.3 2.3 6 0 8.3L12 21.3Z'},
+    ball:{label:'Top',d:'M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20Zm0 2a8 8 0 1 1 0 16 8 8 0 0 1 0-16Zm0 3.2 3.6 2.6-1.4 4.2H9.8L8.4 9.8 12 7.2Z'},
+    diamond:{label:'Elmas',d:'M12 2 22 12 12 22 2 12Z'}
+  };
+  for(const k in ICONS) ICONS[k].p2d=(typeof Path2D!=='undefined')?new Path2D(ICONS[k].d):null;
+  const PRESETS=['#ff8758','#6ce5e5','#ffd166','#ff5c7a','#7bf1a8','#b48cff','#ff9ff3','#f4f7f5'];
+  const clone=o=>JSON.parse(JSON.stringify(o));
+  const isHex=c=>typeof c==='string'&&/^#[0-9a-f]{6}$/i.test(c);
+  function sanitize(s){
+    s.teams=s.teams.slice(0,2).map((t,i)=>{
+      const d=DEFAULTS.teams[i]; t=Object.assign({},d,t||{});
+      if(typeof t.name!=='string')t.name=d.name; t.name=t.name.slice(0,14);
+      if(!isHex(t.color))t.color=d.color;
+      if(!(t.logo in ICONS)&&t.logo!=='letter'&&t.logo!=='image')t.logo=d.logo;
+      if(typeof t.image!=='string'||!t.image.startsWith('data:image/'))t.image=null;
+      if(t.logo==='image'&&!t.image)t.logo=d.logo;
+      t.scale=Math.min(1.8,Math.max(0.5,Math.round((+t.scale||1)*20)/20));
+      return t;
+    });
+    s.duration=Math.min(180,Math.max(10,Math.round((+s.duration||60)/5)*5));
+    if(s.speed===undefined&&s.goalSpeed!==undefined){s.speed=+s.goalSpeed<=0.7?1:(+s.goalSpeed>=1.5?4:3);}
+    s.speed=(+s.speed>=1&&+s.speed<=10&&Number.isInteger(+s.speed))?+s.speed:1;
+    s.title1=String(s.title1??DEFAULTS.title1).slice(0,18); s.title2=String(s.title2??DEFAULTS.title2).slice(0,18);
+    s.hideButton=!!s.hideButton; return s;
+  }
+  function load(){
+    let s=clone(DEFAULTS);
+    try{const raw=localStorage.getItem(STORE_KEY);if(raw){const p=JSON.parse(raw);if(p&&typeof p==='object'){s=Object.assign(s,p);if(!Array.isArray(p.teams))s.teams=clone(DEFAULTS.teams);}}}catch(e){}
+    return sanitize(s);
+  }
+  let settings=load();
+  settings.cardPlan=(settings.cardPlan&&typeof settings.cardPlan==='object')?settings.cardPlan:{};
+  ['y0','y1'].forEach(k=>settings.cardPlan[k]=clampCard(settings.cardPlan[k],6));
+  ['r0','r1'].forEach(k=>settings.cardPlan[k]=clampCard(settings.cardPlan[k],2));
+  let saveTimer=0, noteTimer=0;
+  const NOTE_DEFAULT='Değişiklikler anında uygulanır ve bu tarayıcıda saklanır.';
+  function note(msg,ok){const el=$('savedNote');el.textContent=msg;el.classList.toggle('ok',!!ok);clearTimeout(noteTimer);noteTimer=setTimeout(()=>{el.textContent=NOTE_DEFAULT;el.classList.remove('ok');},2200);}
+  function save(){clearTimeout(saveTimer);saveTimer=setTimeout(()=>{try{localStorage.setItem(STORE_KEY,JSON.stringify(settings));note('Kaydedildi ✓',true);}catch(e){note('Bu önizlemede kalıcı kayıt yok; ayarlar sayfa açık kaldıkça geçerli.');}},200);}
+
+  /* ---------- Yardımcılar ---------- */
+  function hexToRgb(h){h=h.replace('#','');if(h.length===3)h=h.split('').map(c=>c+c).join('');const n=parseInt(h,16);return [(n>>16)&255,(n>>8)&255,n&255];}
+  const rgba=(h,a)=>{const [r,g,b]=hexToRgb(h);return `rgba(${r},${g},${b},${a})`;};
+  const mix=(h1,h2,t)=>{const a=hexToRgb(h1),b=hexToRgb(h2);return `rgb(${a.map((v,i)=>Math.round(v*(1-t)+b[i]*t)).join(',')})`;};
+  const mixA=(h1,h2,t,a)=>{const x=hexToRgb(h1),y=hexToRgb(h2);return `rgba(${Math.round(x[0]*(1-t)+y[0]*t)},${Math.round(x[1]*(1-t)+y[1]*t)},${Math.round(x[2]*(1-t)+y[2]*t)},${a})`;};
+  const up=s=>String(s).toLocaleUpperCase('tr-TR');
+  const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const teamName=i=>{const n=(settings.teams[i].name||'').trim();return up(n||('TAKIM '+(i+1)));};
+  const initial=i=>{const n=(settings.teams[i].name||'').trim();return n?up(Array.from(n)[0]):String(i+1);};
+  const teamColor=i=>settings.teams[i].color;
+  const logoImgs=[null,null];
+  const previewCtx=[null,null];
+  const PREVIEW_CSS=104;
+  function loadImage(i){const t=settings.teams[i];logoImgs[i]=null;if(!t.image||typeof Image==='undefined')return;const im=new Image();im.onload=()=>{logoImgs[i]=im;drawPreviews((typeof performance!=='undefined'?performance.now():0)/1000);};im.src=t.image;}
+  const iconSvg=k=>ICONS[k]?`<svg viewBox="0 0 24 24" aria-hidden="true"><path fill-rule="evenodd" d="${ICONS[k].d}"/></svg>`:'';
+
+  /* =========================================================
+     SAHNE / OYUN
+     ========================================================= */
+  const canvas=$('game'), ctx=canvas.getContext('2d');
+  const ui={timer:$('timer'),timerLabel:$('timerLabel'),scores:[$('score0'),$('score1')],names:[$('name0'),$('name1')],badges:[$('badge0'),$('badge1')],status:$('status'),overlay:$('goalOverlay'),word:$('goalWord'),callKicker:$('callKicker'),callIcon:$('callIcon'),callSub:$('callSub'),eventBanner:$('eventBanner'),eventIcon:$('eventIcon'),eventKicker:$('eventKicker'),eventWord:$('eventWord'),eventSub:$('eventSub'),progress:$('progress'),fuseSpark:$('fuseSpark'),play:$('playBtn'),reset:$('resetBtn')};
+  const W=400,H=711,CX=200,CY=398,R=147,BR=17,NET=36,HALF_GAP=0.30;
+  const ballR=id=>BR*(settings.teams[id].scale||1);
+  // Kale geometrisi (kale yerel koordinatlarında: x = merkezden dışa, y = teğet yön)
+  const GW=R*Math.sin(HALF_GAP), PX=R-6, BX=R+NET, POST=7;
+  // Tek parça U çerçeve: iki dikdörtgen direk + direklerin ucuna tam oturan üst direk (çıkıntı yok).
+  function framePath(){ctx.beginPath();ctx.moveTo(PX,-GW-POST/2);ctx.lineTo(BX,-GW-POST/2);ctx.lineTo(BX,GW+POST/2);ctx.lineTo(PX,GW+POST/2);ctx.lineTo(PX,GW-POST/2);ctx.lineTo(BX-POST,GW-POST/2);ctx.lineTo(BX-POST,-GW+POST/2);ctx.lineTo(PX,-GW+POST/2);ctx.closePath();}
+  let balls=[],particles=[],elapsed=0,paused=false,finished=false,goalFlash=0,eventFlash=0,last=0,shake=0,goalCooldown=0,scores=[0,0],matchGoalCap=0;
+  let eventDeck=[],nextEventAt=0,eventStatus='',eventColor='',cards=[{yellow:0,red:0},{yellow:0,red:0}],cardPlan=[];
+  const MAX_GOALS=6, CARD_CAPS={yellow:6,red:2}; // takım başına üst sınırlar
+  let goalLog=[[],[]]; // takım başına atılan gollerin maç dakikaları
+  let goalAngle=-Math.PI/2; // kale çemberin çizgisi üzerinde bu açıda durur ve döner
+  const DUR=()=>settings.duration;
+  function rand(a,b){return a+Math.random()*(b-a)}
+  // Bu yüzdeler her maçta bir toplam-gol profili seçer; aralık içinde düşük skorlar daha ağırlıklıdır.
+  const GOAL_PROFILES=[
+    {weight:70, scores:[[0,42],[1,40],[2,12],[3,6]]},
+    {weight:15, scores:[[2,95],[3,5]]},
+    {weight:10, scores:[[3,80],[4,20]]},
+    {weight:5, scores:[[4,70],[5,20],[6,10]]}
+  ];
+  function weightedPick(items){let r=Math.random()*items.reduce((sum,item)=>sum+item[1],0);for(const [value,weight] of items){r-=weight;if(r<0)return value;}return items[items.length-1][0];}
+  function rollMatchGoalCap(){const profile=weightedPick(GOAL_PROFILES.map((p,i)=>[i,p.weight]));return weightedPick(GOAL_PROFILES[profile].scores);}
+  function norm(a){while(a>Math.PI)a-=TAU;while(a<-Math.PI)a+=TAU;return a}
+  function fmt(s){s=Math.max(0,Math.ceil(s));return String(Math.floor(s/60)).padStart(2,'0')+':'+String(s%60).padStart(2,'0');}
+  function makeBall(id){let a=rand(0,TAU),speed=rand(98,132)*spdMul();return {id,x:CX+Math.cos(a)*rand(20,70),y:CY+Math.sin(a)*rand(20,70),vx:Math.cos(a+rand(-1,1))*speed,vy:Math.sin(a+rand(-1,1))*speed,angle:0,trail:[],inNet:0};}
+  /* ---------- Taraftar tribünleri: sol/sağ alt; basamak sıraları hâlinde, çembere kadar; zıplayan + tezahürat; zemin yukarı doğru silinen gradient ---------- */
+  const SKINS=['#f3d2b5','#e8c19a','#c9956c','#8d5a32','#f6e0c8','#d4a574','#ffe0c2'];
+  const CHANTS_SHORT=['OLÉ OLÉ OLÉ!','GOL GOL GOL!','BU MAÇ BİZİM!','HÜCUM HÜCUM!','OLEY OLEY!','ATEŞ GİBİ!','KALE KALE!','WUH WUH WUH!','İNİNİNİ!','HER YERDE!','SİZİ SEVİYORUZ!','BU TRIBÜN ATEŞ!'];
+  const CHANTS_NAME=n=>['HAYDİ '+n+'!',n+' BURADA!','ŞAMPİYON '+n+'!','YAŞA '+n+'!',n+' AŞKI!','HER YER '+n+'!'];
+  const GOAL_CHANTS=['GOOOOOOL!','İŞTE BU!','EFSANE!','NE GOL!','VURDU!','ADAMA GOL!'];
+  let crowdFans=[[],[]], crowdDots=[[],[]], crowdBoost=[0,0], tribSteps=[[],[]], chants=[{life:0.3},{life:1.1}];
+  // Tribün geometrisi: verilen yükseklikte çemberden (kalemden) itibaren izin verilen x aralığı.
+  function tribHalf(y){const rr=R+9,dy=y-CY;let m=(dy>0&&dy<rr)?Math.sqrt(rr*rr-dy*dy):0;return Math.max(m,12);}
+  function tribRange(side,y){const m=tribHalf(y);return side?[CX+m+2,W-4]:[4,CX-m-2];}
+  function spawnCrowd(){
+    crowdFans=[[],[]]; crowdDots=[[],[]]; crowdBoost=[0,0]; tribSteps=[[],[]];
+    chants=[{life:0.35,max:1,text:'',x:80,y:560},{life:1.15,max:1,text:'',x:320,y:560}];
+    const topY=CY-70, span=H-topY;
+    for(let side=0;side<2;side++){
+      const aisle=side?CX+(W-CX)*0.52:CX*0.48; // sıraları ikiye bölen merdiven boşluğu
+      // Ön sıralar (tribünün önü): iri, detaylı taraftarlar; arkaya doğru küçülürler.
+      const frontS=[1.28,1.11,0.97,0.84], frontN=[12,10,8,6];
+      for(let r=0;r<4;r++){
+        const y=H-17-r*24;
+        const xR=tribRange(side,y), n=frontN[r];
+        for(let k=0;k<n;k++){
+          const x=xR[0]+(xR[1]-xR[0])*((k+0.5)/n+rand(-0.34,0.34)/n);
+          if(Math.abs(x-aisle)<9) continue;
+          crowdFans[side].push({x,y,s:frontS[r]+rand(-0.05,0.08),phase:rand(0,TAU),freq:rand(4.3,7.0),amp:rand(0.86,1.34),skin:SKINS[(Math.random()*SKINS.length)|0],tint:0.10+r*0.12+rand(0,0.10),kind:Math.random()<(r===0?0.26:0.18)?'flag':(Math.random()<0.32?'scarf':'arms'),flip:side?1:-1});
+        }
+        tribSteps[side].push(y+6);
+      }
+      // Arka sıralar: ufak nokta kalabalık, çembere kadar basamak basamak dolar.
+      const rows=[]; for(let y=H-23;y>topY;y-=11.4) rows.push(y);
+      const widths=rows.map(y=>{const w=tribRange(side,y);return Math.max(0,w[1]-w[0]);});
+      rows.forEach((y,ri)=>{
+        if(widths[ri]<14) return;
+        const xR=tribRange(side,y), depth=(y-topY)/span;
+        const n=Math.max(2,Math.round(widths[ri]/9.8+rand(-1.4,1.4))); // gradientin her yerine yay: genişliğe göre yoğunluk
+        for(let k=0;k<n;k++){
+          const x=xR[0]+(xR[1]-xR[0])*rand(0,1);
+          if(Math.abs(x-aisle)<8) continue;
+          crowdDots[side].push({x,y,s:1.18+depth*0.64+rand(-0.07,0.12),phase:rand(0,TAU),freq:rand(4.6,7.2),amp:rand(0.72,1.30),skin:SKINS[(Math.random()*SKINS.length)|0],tint:Math.min(0.6,0.16+(1-depth)*0.22+rand(0,0.12)),kind:'dot',flip:side?1:-1});
+        }
+        tribSteps[side].push(y+2);
+      });
+      crowdFans[side].sort((a,b)=>a.y-b.y); crowdDots[side].sort((a,b)=>a.y-b.y); tribSteps[side].sort((a,b)=>a-b);
+    }
+  }
+  function punchChant(side,kind){
+    const name=teamName(side), short=name.length>8;
+    let text;
+    if(kind==='goal') text=GOAL_CHANTS[(Math.random()*GOAL_CHANTS.length)|0];
+    else{
+      const named=CHANTS_NAME(name);
+      const pool=(short && Math.random()<0.55)?CHANTS_SHORT:(Math.random()<0.42?CHANTS_SHORT:named);
+      text=pool[(Math.random()*pool.length)|0];
+    }
+    const pool=crowdFans[side];
+    const f=pool.length?pool[(Math.random()*pool.length)|0]:{x:side?325:75,y:610};
+    const hold=kind==='goal'?2.7:rand(2.15,3.5);
+    chants[side]={life:hold,max:hold,text,x:f.x,y:f.y-26};
+  }
+  function crowdCelebrate(id){
+    crowdBoost[id]=2.15;
+    const col=teamColor(id);
+    for(let k=0;k<9;k++) burst(id?rand(CX+22,W-8):rand(8,CX-22), rand(CY+28,H-34), col, 7);
+    punchChant(id,'goal');
+  }
+  function updateCrowd(dt){
+    crowdBoost[0]=Math.max(0,crowdBoost[0]-dt*0.85);
+    crowdBoost[1]=Math.max(0,crowdBoost[1]-dt*0.85);
+    if(paused||finished) return;
+    for(let s=0;s<2;s++){
+      const c=chants[s]; c.life-=dt;
+      if(c.life<=0) punchChant(s,'chant');
+    }
+  }
+  function rrPath(x,y,w,h,r){
+    const rr=Math.min(r,w/2,h/2);
+    ctx.beginPath(); ctx.moveTo(x+rr,y);
+    ctx.arcTo(x+w,y,x+w,y+h,rr); ctx.arcTo(x+w,y+h,x,y+h,rr);
+    ctx.arcTo(x,y+h,x,y,rr); ctx.arcTo(x,y,x+w,y,rr); ctx.closePath();
+  }
+  function drawTribune(side,col,boost){
+    ctx.save(); ctx.beginPath();
+    const pad=R+6;
+    if(side===0){
+      ctx.moveTo(0,H); ctx.lineTo(CX-16,H);
+      let lastY=H;
+      for(let a=Math.PI*0.52;a<=Math.PI*1.20;a+=0.03){const px=CX+Math.cos(a)*pad,py=CY+Math.sin(a)*pad;ctx.lineTo(px,py);lastY=py;}
+      ctx.lineTo(0,lastY);
+    }else{
+      ctx.moveTo(W,H); ctx.lineTo(CX+16,H);
+      let lastY=H;
+      for(let a=Math.PI*0.48;a>=-Math.PI*0.20;a-=0.03){const px=CX+Math.cos(a)*pad,py=CY+Math.sin(a)*pad;ctx.lineTo(px,py);lastY=py;}
+      ctx.lineTo(W,lastY);
+    }
+    ctx.closePath();
+    // Tribün zemini: takım renkli gradient — aşağıda belirgin, yukarı doğru tamamen silinir.
+    const topY=CY-74, span=H-topY;
+    const g=ctx.createLinearGradient(0,H,0,topY);
+    g.addColorStop(0,mixA(col,'#04100f',0.30,Math.min(0.92,0.72+boost*0.16)));
+    g.addColorStop(0.25,rgba(col,Math.min(0.85,0.38+boost*0.22)));
+    g.addColorStop(0.6,rgba(col,Math.min(0.6,0.22+boost*0.12)));
+    g.addColorStop(0.85,rgba(col,Math.min(0.3,0.08+boost*0.06)));
+    g.addColorStop(1,rgba(col,0));
+    ctx.fillStyle=g; ctx.fill();
+    ctx.clip();
+    // Merdiven boşluğu: yukarıda silinen açık şerit.
+    const aisle=side?CX+(W-CX)*0.52:CX*0.48;
+    const ag=ctx.createLinearGradient(0,H,0,topY);
+    ag.addColorStop(0,'rgba(226,244,238,0.15)'); ag.addColorStop(0.6,'rgba(226,244,238,0.05)'); ag.addColorStop(1,'rgba(226,244,238,0)');
+    ctx.fillStyle=ag; ctx.fillRect(aisle-6,topY,12,span);
+    const eg=ctx.createLinearGradient(0,H,0,topY);
+    eg.addColorStop(0,'rgba(226,244,238,0.20)'); eg.addColorStop(1,'rgba(226,244,238,0)');
+    ctx.strokeStyle=eg; ctx.lineWidth=1;
+    ctx.beginPath(); ctx.moveTo(aisle-6,H); ctx.lineTo(aisle-6,topY); ctx.moveTo(aisle+6,H); ctx.lineTo(aisle+6,topY); ctx.stroke();
+    // Basamak çizgileri: taraftar sıralarıyla hizalı, yukarı doğru soluklaşır.
+    const steps=tribSteps[side]||[], rp=R+8;
+    for(let i=0;i<steps.length;i++){
+      const y=steps[i], d=Math.max(0,Math.min(1,(y-topY)/span));
+      if(d<0.05) continue;
+      const dy=y-CY; let m=(dy>0&&dy<rp)?Math.sqrt(rp*rp-dy*dy):0; m=Math.max(m,12);
+      const a=0.05+0.15*Math.pow(d,1.6)+boost*0.06*d;
+      ctx.strokeStyle='rgba(228,255,244,'+a.toFixed(3)+')';
+      ctx.lineWidth=1;
+      ctx.beginPath(); ctx.moveTo(side?CX+m:0,y); ctx.lineTo(side?W:CX-m,y); ctx.stroke();
+    }
+    // Tribünün ön kenarı: hafif aydınlatılmış bariyer.
+    const fx=side?CX+18:0, fw=side?W-CX-18:CX-18;
+    ctx.fillStyle=mixA(col,'#e9fff7',0.45,Math.min(0.60,0.26+boost*0.16));
+    ctx.fillRect(fx,H-8.5,fw,2);
+    ctx.restore();
+  }
+  function fanJump(f,t,boost){
+    const hop=Math.abs(Math.sin(t*f.freq+f.phase));
+    const wave=0.55+0.45*Math.sin(t*1.65+f.x*0.042);
+    return hop*(5.4+boost*9.2)*f.amp*wave;
+  }
+  function drawDot(f,t,col,boost){
+    const j=fanJump(f,t,boost)*0.52, x=f.x, y=f.y-j, s=f.s;
+    ctx.fillStyle=mix(col,'#0a1819',f.tint);
+    ctx.beginPath(); ctx.arc(x,y-1.1*s,2.05*s,0,TAU); ctx.fill();
+    ctx.fillStyle=f.skin;
+    ctx.beginPath(); ctx.arc(x,y-3.2*s,1.5*s,0,TAU); ctx.fill();
+  }
+  function drawFanFig(f,t,col,boost){
+    const j=fanJump(f,t,boost), x=f.x, y=f.y-j, s=f.s, wave=Math.sin(t*f.freq*1.35+f.phase);
+    const jersey=mix(col,'#081617',f.tint*0.55);
+    ctx.strokeStyle=mix(jersey,'#040a0b',0.4); ctx.lineWidth=1.5*s; ctx.lineCap='round';
+    ctx.beginPath();
+    ctx.moveTo(x-1.35*s,y+1.4*s); ctx.lineTo(x-2.05*s,y+5.1*s);
+    ctx.moveTo(x+1.35*s,y+1.4*s); ctx.lineTo(x+2.05*s,y+5.1*s);
+    ctx.stroke();
+    ctx.fillStyle=jersey;
+    ctx.beginPath(); ctx.ellipse(x,y-2.15*s,3.0*s,4.3*s,0,0,TAU); ctx.fill();
+    ctx.strokeStyle=jersey; ctx.lineWidth=1.55*s;
+    const lx=x-5.35*s+wave*1.15*s, ly=y-12.3*s-j*0.08;
+    const rx=x+5.35*s-wave*1.15*s, ry=y-12.3*s-j*0.08;
+    ctx.beginPath();
+    ctx.moveTo(x-2.05*s,y-4.9*s); ctx.quadraticCurveTo(x-5.1*s,y-7.8*s,lx,ly);
+    ctx.moveTo(x+2.05*s,y-4.9*s); ctx.quadraticCurveTo(x+5.1*s,y-7.8*s,rx,ry);
+    ctx.stroke();
+    ctx.fillStyle=f.skin;
+    ctx.beginPath(); ctx.arc(lx,ly,1.12*s,0,TAU); ctx.arc(rx,ry,1.12*s,0,TAU); ctx.fill();
+    ctx.beginPath(); ctx.arc(x,y-7.5*s,2.5*s,0,TAU); ctx.fill();
+    ctx.fillStyle=mix(col,'#111',0.55);
+    ctx.beginPath(); ctx.arc(x,y-8.2*s,2.4*s,Math.PI,TAU); ctx.fill();
+    if(f.kind==='scarf'){
+      ctx.strokeStyle=col; ctx.lineWidth=1.85*s; ctx.lineCap='round';
+      ctx.beginPath(); ctx.moveTo(lx,ly); ctx.quadraticCurveTo(x,ly-3.4*s+wave*s,rx,ry); ctx.stroke();
+      ctx.fillStyle=mix(col,'#fff',0.22); ctx.fillRect(x-3.1*s,y-5.3*s,6.2*s,1.25*s);
+    }else if(f.kind==='flag'){
+      const poleX=x+f.flip*3.15*s, poleY=y-14.2*s-wave;
+      ctx.strokeStyle='#e8f4ee'; ctx.lineWidth=1.05*s;
+      ctx.beginPath(); ctx.moveTo(poleX,y-4*s); ctx.lineTo(poleX,poleY); ctx.stroke();
+      const wig=Math.sin(t*9+f.phase)*1.55*s, dir=f.flip;
+      ctx.fillStyle=col;
+      ctx.beginPath();
+      ctx.moveTo(poleX,poleY);
+      ctx.lineTo(poleX+dir*(9*s+wig),poleY+1.15*s);
+      ctx.lineTo(poleX+dir*(8.1*s+wig*0.5),poleY+5.5*s);
+      ctx.lineTo(poleX,poleY+4.5*s);
+      ctx.closePath(); ctx.fill();
+    }
+  }
+  function drawBubble(c,col){
+    if(c.life<=0||!c.text) return;
+    const a=Math.max(0,Math.min(1,(c.max-c.life)/0.18,c.life/0.28));
+    ctx.save(); ctx.globalAlpha=a;
+    let fs=9; ctx.font='900 '+fs+'px Inter, ui-sans-serif, system-ui, sans-serif';
+    ctx.textAlign='center'; ctx.textBaseline='middle';
+    while(ctx.measureText(c.text).width>112 && fs>6){fs--; ctx.font='900 '+fs+'px Inter, ui-sans-serif, system-ui, sans-serif';}
+    const w=Math.min(120,ctx.measureText(c.text).width+14), h=17;
+    let x=Math.max(w/2+4,Math.min(W-w/2-4,c.x)), y=c.y-12;
+    const dx=x-CX, dy=y-CY, d=Math.hypot(dx,dy);
+    if(d<R+20 && d>0.1){const k=(R+20)/d; x=CX+dx*k; y=CY+dy*k;}
+    rrPath(x-w/2,y-h/2,w,h,7);
+    ctx.fillStyle='rgba(6,22,24,0.93)'; ctx.fill();
+    ctx.strokeStyle=col; ctx.lineWidth=1.15; ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(x-4,y+h/2-1); ctx.lineTo(x,y+h/2+6); ctx.lineTo(x+4,y+h/2-1);
+    ctx.closePath(); ctx.fillStyle='rgba(6,22,24,0.93)'; ctx.fill(); ctx.stroke();
+    ctx.fillStyle='#eefaf3'; ctx.fillText(c.text,x,y+0.4);
+    ctx.restore();
+  }
+  function drawBanner(side,col,name,t){
+    const x=side?330:70, y=616+Math.sin(t*3.05+side)*2.1;
+    ctx.save(); ctx.translate(x,y); ctx.rotate(side?0.055:-0.055);
+    const label='★ '+name+' ★';
+    ctx.font='900 8px Inter, ui-sans-serif, system-ui, sans-serif';
+    ctx.textAlign='center'; ctx.textBaseline='middle';
+    const w=Math.min(96,ctx.measureText(label).width+16), h=15;
+    rrPath(-w/2,-h/2,w,h,3);
+    ctx.fillStyle=mix(col,'#0b1c1c',0.52); ctx.fill();
+    ctx.strokeStyle=col; ctx.lineWidth=1.35; ctx.stroke();
+    ctx.fillStyle='#f4fff8'; ctx.fillText(label,0,0.4);
+    ctx.restore();
+  }
+  function drawCrowd(t){
+    ctx.save();
+    ctx.beginPath(); ctx.rect(0,0,W,H); ctx.arc(CX,CY,R+5,0,TAU,false); ctx.clip('evenodd');
+    for(let s=0;s<2;s++){
+      const col=teamColor(s), boost=crowdBoost[s]+((finished&&scores[s]>scores[1-s])?0.75:0);
+      drawTribune(s,col,boost);
+      const dots=crowdDots[s], fans=crowdFans[s];
+      for(let i=0;i<dots.length;i++) drawDot(dots[i],t,col,boost);
+      for(let i=0;i<fans.length;i++) drawFanFig(fans[i],t,col,boost);
+      drawBanner(s,col,teamName(s),t);
+    }
+    ctx.strokeStyle='rgba(0,255,213,0.10)'; ctx.lineWidth=2;
+    ctx.beginPath(); ctx.moveTo(CX,CY+R+10); ctx.lineTo(CX,H); ctx.stroke();
+    ctx.restore();
+    drawBubble(chants[0],teamColor(0));
+    drawBubble(chants[1],teamColor(1));
+  }
+  function renderBadge(i){const el=ui.badges[i],t=settings.teams[i];el.style.color=teamColor(i);
+    if(t.logo==='image'&&t.image){const cur=el.firstElementChild;if(cur&&cur.tagName==='IMG'&&cur.getAttribute('src')===t.image)return;el.innerHTML=`<img src="${t.image}" alt="">`;}
+    else if(t.logo==='letter')el.innerHTML=`<span class="badge-letter">${esc(initial(i))}</span>`;
+    else el.innerHTML=iconSvg(t.logo);}
+  // Ayarları sahneye anında yansıt (maçı bozmadan).
+  function applyLive(){for(let i=0;i<2;i++){ui.names[i].textContent=teamName(i);renderBadge(i);}renderGoals();document.body.classList.toggle('hide-admin-btn',settings.hideButton);syncUI();drawPreviews((typeof performance!=='undefined'?performance.now():0)/1000);}
+  function reset(){varState=null;balls=[makeBall(0),makeBall(1)];particles=[];elapsed=0;paused=false;finished=false;goalFlash=0;eventFlash=0;goalCooldown=0;scores=[0,0];matchGoalCap=rollMatchGoalCap();cards=[{yellow:0,red:0},{yellow:0,red:0}];goalLog=[[],[]];eventDeck=[];nextEventAt=rand(1.1,1.8);rebuildCardPlan(0);spawnCrowd();eventStatus='';eventColor='';goalAngle=-Math.PI/2;ui.scores.forEach(e=>e.textContent='0');ui.status.textContent='İLK GOLÜ KİM ATACAK?';ui.status.style.color='';varClearOverlay();ui.eventBanner.classList.remove('visible');ui.eventBanner.style.removeProperty('--event-color');ui.eventBanner.style.removeProperty('--event-glow');ui.word.style.fontSize='';ui.word.style.lineHeight='';ui.word.textContent='GOL!';ui.word.style.color='';ui.callKicker.textContent='GOL ANI';ui.callIcon.textContent='⚽';ui.callSub.textContent='';ui.callSub.style.color='';ui.play.innerHTML='⏸ &nbsp; DURAKLAT';renderCards();renderGoals();syncUI();}
+  const cardEls=[{yellow:$('y0'),red:$('r0')},{yellow:$('y1'),red:$('r1')}];
+  function renderCards(pop){
+    [0,1].forEach(i=>['yellow','red'].forEach(k=>{
+      const el=cardEls[i][k],n=cards[i][k];el.querySelector('b').textContent=n;el.classList.toggle('has',n>0);
+      if(pop&&pop.id===i&&pop.key===k){el.classList.remove('pop');void el.offsetWidth;el.classList.add('pop');}
+    }));
+  }
+  const goalEls=[$('goals0'),$('goals1')];
+  // Süre 90 dakikalık maça ölçeklenir: 20 sn'lik maçta her saniye ~4.5 dakika.
+  const matchMinute=()=>Math.max(1,Math.min(90,Math.ceil(elapsed/DUR()*90)));
+  function renderGoals(popIdx){
+    [0,1].forEach(i=>{
+      const list=goalLog[i],MAX=MAX_GOALS;
+      const extra=list.length>MAX?list.length-MAX+1:0;
+      const shown=extra?list.slice(-(MAX-1)):list.slice();
+      const base=list.length-shown.length;
+      let html=extra?`<span class="gmin more">+${extra}</span>`:'';
+      html+=shown.map((m,k)=>`<span class="gmin${base+k===popIdx?' pop':''}" style="color:${teamColor(i)}" title="${esc(teamName(i))} · ${m}. dakika"><i></i>${m}'</span>`).join('');
+      const el=goalEls[i];if(!el)return;
+      el.innerHTML=html;el.classList.toggle('tight',list.length>4);
+      el.setAttribute('aria-label',teamName(i)+' gol dakikaları: '+(list.length?list.map(m=>m+"'").join(', '):'henüz gol yok'));
+    });
+  }
+  function syncUI(){const rem=Math.max(0,DUR()-elapsed);ui.timer.textContent=matchMinute()+"'";if(ui.timerLabel)ui.timerLabel.textContent=(elapsed>=DUR()/2?'2. YARI':'1. YARI');const pct=Math.max(0,Math.min(1,rem/DUR()));ui.progress.style.width=(pct*100)+'%';if(ui.fuseSpark){if(pct<=0.001||finished){ui.fuseSpark.style.opacity='0';}else{ui.fuseSpark.style.opacity=paused?'0.35':'1';}}}
+  function burst(x,y,color,count){for(let i=0;i<count;i++){let a=rand(0,TAU),s=rand(35,175);particles.push({x,y,vx:Math.cos(a)*s,vy:Math.sin(a)*s,life:rand(.35,.85),max:.85,color,size:rand(2,5)});}}
+  function goalMouth(){return {x:CX+Math.cos(goalAngle)*(R+8),y:CY+Math.sin(goalAngle)*(R+8)};}
+  const RANDOM_EVENTS={
+    offside:{title:'OFSAYT!',icon:'🚩',kicker:'HAKEM KARARI',color:'#ffd166'},
+    penalty:{title:'PENALTI!',icon:'⚖️',kicker:'PENALTI NOKTASI',color:'#fff0a8'},
+    post:{title:'DİREK!',icon:'🥅',kicker:'ŞUT ANI',color:'#8ff4e9'},
+    foul:{title:'FAUL!',icon:'⚠️',kicker:'HAKEM DÜDÜĞÜ',color:'#ff9a70'},
+    yellow:{title:'SARI KART',icon:'🟨',kicker:'KART GÖSTERİLDİ',color:'#ffe05b'},
+    red:{title:'KIRMIZI KART',icon:'🟥',kicker:'KART GÖSTERİLDİ',color:'#ff6474'}
+  };
+  const EVENT_KEYS=Object.keys(RANDOM_EVENTS).filter(k=>k!=='yellow'&&k!=='red'&&k!=='offside'); // ofsayt yalnızca golden sonra VAR'da kontrol edilir; kartlar panelde girilen sayıya göre planlanır
+  function eventAvailable(key){if(key!=='yellow'&&key!=='red')return true;const cap=CARD_CAPS[key];return cards[0][key]<cap||cards[1][key]<cap;}
+  function shuffleEvents(){const d=EVENT_KEYS.filter(eventAvailable);for(let i=d.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[d[i],d[j]]=[d[j],d[i]];}return d;}
+  function pullEvent(){let key=eventDeck.pop();while(key&&!eventAvailable(key))key=eventDeck.pop();if(!key)eventDeck=shuffleEvents();return eventDeck.pop()||'foul';}
+  function announceRandomEvent(){
+    const key=pullEvent(),ev=RANDOM_EVENTS[key];
+    let id=Math.floor(Math.random()*2);
+    if(key==='yellow'||key==='red'){const cap=CARD_CAPS[key],cands=[0,1].filter(i=>cards[i][key]<cap);if(cands.length)id=cands[Math.floor(Math.random()*cands.length)];}
+    let detail='';
+    if(key==='offside')detail=teamName(id)+' HÜCUMU KESİLDİ';
+    else if(key==='penalty')detail=teamName(id)+' PENALTI KAZANDI';
+    else if(key==='post')detail=teamName(id)+' ŞUTU DİREKTEN DÖNDÜ';
+    else if(key==='foul')detail=teamName(id)+' LEHİNE SERBEST VURUŞ';
+    else if(key==='yellow')detail=teamName(id)+' · '+(++cards[id].yellow)+'. SARI KART';
+    else if(key==='red')detail=teamName(id)+' · '+(++cards[id].red)+'. KIRMIZI KART';
+    if(key==='yellow'||key==='red')renderCards({id,key});
+    ui.eventWord.textContent=ev.title;ui.eventIcon.textContent=ev.icon;ui.eventKicker.textContent=ev.kicker;ui.eventSub.textContent=detail;ui.eventBanner.style.setProperty('--event-color',ev.color);ui.eventBanner.style.setProperty('--event-glow',rgba(ev.color,.24));ui.eventBanner.classList.add('visible');eventFlash=1.2;eventStatus=ev.title+' · '+teamName(id);eventColor=ev.color;
+    if(goalFlash<=0){ui.status.textContent=eventStatus;ui.status.style.color=eventColor;}
+    if(key==='post'){
+      const side=Math.random()<.5?-1:1,ca=Math.cos(goalAngle),sa=Math.sin(goalAngle);
+      const x=CX+(R+NET*.55)*ca-side*GW*sa,y=CY+(R+NET*.55)*sa+side*GW*ca;
+      burst(x,y,ev.color,22);shake=6;
+    }else{
+      const b=balls.find(x=>x.id===id&&x.inNet<=0);
+      if(b){burst(b.x,b.y,ev.color,key==='penalty'?18:12);
+        if(key==='offside'){b.vx*=-.72;b.vy*=-.72;}
+        else if(key==='penalty'){const m=goalMouth(),dx=m.x-b.x,dy=m.y-b.y,d=Math.hypot(dx,dy)||1;b.vx=dx/d*148*spdMul();b.vy=dy/d*148*spdMul();}
+        else if(key==='foul'){b.vx*=.62;b.vy*=.62;}
+      }
+    }
+  }
+  /* ---------- VAR & Gol: her gol VAR'a gitmez, rastgele girer ---------- */
+  const VAR={check:0.62,verdict:0.80,chance:0.66,reasons:['OFSAYT']};
+  let varState=null;
+  const scoreLine=()=>teamName(0)+' '+scores[0]+' – '+scores[1]+' '+teamName(1);
+  const WHISTLE_SVG='<svg viewBox="0 0 64 64" aria-hidden="true"><rect x="4" y="17" width="27" height="13" rx="4" fill="#ffd166"/><rect x="19" y="21" width="8" height="5" rx="2" fill="#08201f" opacity=".8"/><circle cx="40" cy="38" r="17" fill="#ffd166"/><circle cx="40" cy="38" r="5.5" fill="#08201f"/></svg>';
+  function showWhistleCard(word,sub,kicker,html){ui.callKicker.textContent=kicker||'HAKEM DÜDÜĞÜ';ui.callIcon.innerHTML=WHISTLE_SVG;if(html){ui.word.innerHTML=html;ui.word.style.fontSize='clamp(48px,14vw,68px)';ui.word.style.lineHeight='.92';}else{ui.word.style.fontSize='';ui.word.style.lineHeight='';ui.word.textContent=word;}ui.word.style.color='';ui.callSub.textContent=sub;ui.callSub.style.color='#eaf8ee';ui.overlay.classList.add('visible');}
+  function clampCard(v,hi){v=Math.round(+v||0);return Math.max(0,Math.min(hi,v));}
+  function cardTargets(){const p=settings.cardPlan=settings.cardPlan||{};return{y0:clampCard(p.y0,6),r0:clampCard(p.r0,2),y1:clampCard(p.y1,6),r1:clampCard(p.r1,2)};}
+  function rebuildCardPlan(fromElapsed){const p=cardTargets(),items=[];[[0,'yellow',p.y0],[0,'red',p.r0],[1,'yellow',p.y1],[1,'red',p.r1]].forEach(([id,key,target])=>{for(let n=cards[id][key];n<target;n++)items.push({key,id,t:0});});const hi=Math.max(1.6,DUR()-1.5),lo=Math.min(Math.max(0.8,fromElapsed+0.7),hi-0.3);const n=items.length,span=Math.max(0.5,hi-lo);const minGap=Math.max(2.5,Math.min(8,span/(n+1)));items.forEach((it,i)=>{it.t=Math.min(hi,lo+span*(i+rand(0.25,0.75))/Math.max(1,n)+rand(-0.8,0.8));});items.sort((a,b)=>a.t-b.t);for(let i=1;i<n;i++){if(items[i].t-items[i-1].t<minGap)items[i].t=Math.min(hi,items[i-1].t+minGap);}cardPlan=items;}
+  function announceCard(key,id){const ev=RANDOM_EVENTS[key];cards[id][key]++;const detail=teamName(id)+' · '+(key==='yellow'?cards[id].yellow+'. SARI KART':cards[id].red+'. KIRMIZI KART');renderCards({id,key});ui.eventWord.textContent=ev.title;ui.eventIcon.textContent=ev.icon;ui.eventKicker.textContent=ev.kicker;ui.eventSub.textContent=detail;ui.eventBanner.style.setProperty('--event-color',ev.color);ui.eventBanner.style.setProperty('--event-glow',rgba(ev.color,.24));ui.eventBanner.classList.add('visible');eventFlash=1.2;eventStatus=ev.title+' · '+teamName(id);eventColor=ev.color;if(goalFlash<=0){ui.status.textContent=eventStatus;ui.status.style.color=eventColor;}const b=balls.find(x=>x.id===id&&x.inNet<=0);if(b){burst(b.x,b.y,ev.color,key==='red'?18:12);if(key==='red')shake=5;}}
+  function varClearOverlay(){ui.overlay.classList.remove('visible','var-mode','var-valid','var-cancel','var-done');ui.overlay.style.removeProperty('--call-glow');ui.callSub.style.color='';}
+  function directGoal(b){
+    const id=b.id,col=teamColor(id),name=teamName(id),m=matchMinute();
+    b.inNet=0.5; // gol olunca logo yarım saniye filelerin içinde kalsın
+    scores[id]++;ui.scores[id].textContent=scores[id];
+    goalLog[id].push(m);renderGoals(goalLog[id].length-1);
+    eventFlash=0;ui.eventBanner.classList.remove('visible');ui.eventBanner.style.removeProperty('--event-color');ui.eventBanner.style.removeProperty('--event-glow');
+    varClearOverlay();
+    ui.overlay.classList.add('visible');
+    ui.overlay.style.setProperty('--call-glow',rgba(col,.35));
+    ui.callKicker.textContent='GOL ANI';
+    ui.callIcon.textContent='⚽';
+    ui.word.style.fontSize='';ui.word.style.lineHeight='';ui.word.textContent='GOL!';ui.word.style.color=col;
+    ui.callSub.textContent=name+' · '+m+'. DAKİKA';ui.callSub.style.color=col;
+    ui.status.textContent=name+' GOL ATTI!';ui.status.style.color=col;
+    shake=14;const mouth=goalMouth();burst(mouth.x,mouth.y,col,42);crowdCelebrate(id);
+    goalFlash=1.25;goalCooldown=0.55;nextEventAt=Math.max(nextEventAt,elapsed+1.2);
+  }
+  function startVAR(b){
+    const id=b.id;
+    varState={id,t:0,phase:'check',minute:matchMinute(),valid:Math.random()<VAR.chance,reason:VAR.reasons[Math.floor(Math.random()*VAR.reasons.length)]};
+    b.inNet=VAR.check+VAR.verdict+0.15; // inceleme boyunca logo fileden çıkmaz
+    eventFlash=0;
+    ui.eventBanner.classList.remove('visible');ui.eventBanner.style.removeProperty('--event-color');ui.eventBanner.style.removeProperty('--event-glow');
+    ui.overlay.classList.add('visible','var-mode');
+    ui.overlay.classList.remove('var-valid','var-cancel','var-done');
+    ui.overlay.style.setProperty('--call-glow',rgba('#00ffd5',.16));
+    ui.callKicker.textContent='OFSAYT KONTROLÜ';
+    ui.callIcon.textContent='📺';
+    ui.word.style.fontSize='';ui.word.style.lineHeight='';ui.word.textContent='VAR';ui.word.style.color='#ecfff7';
+    ui.callSub.textContent=teamName(id)+' GOLÜNDE OFSAYT VAR MI?';ui.callSub.style.color='#bfe9dc';
+    ui.status.textContent='VAR · '+teamName(id)+' GOLÜ OFSAYT KONTROLÜ';ui.status.style.color='#d9f7ec';
+    goalFlash=0;
+  }
+  function resolveVAR(){
+    const v=varState;if(!v)return;
+    const id=v.id,col=teamColor(id),name=teamName(id);
+    v.phase='verdict';v.t=0;
+    ui.overlay.classList.add('var-done');
+    ui.callKicker.textContent='VAR KARARI';
+    if(v.valid){
+      ui.overlay.classList.add('var-valid');
+      ui.callIcon.textContent='✅';
+      ui.word.style.fontSize='';ui.word.style.lineHeight='';ui.word.textContent='GOL!';ui.word.style.color=col;
+      ui.callSub.textContent='GOL GEÇERLİ · '+v.minute+". DAKİKA";ui.callSub.style.color=col;
+      ui.status.textContent=name+' GOL ATTI!';ui.status.style.color=col;
+      scores[id]++;ui.scores[id].textContent=scores[id];
+      goalLog[id].push(v.minute);renderGoals(goalLog[id].length-1);
+      shake=14;const m=goalMouth();burst(m.x,m.y,col,40);crowdCelebrate(id);
+    }else{
+      ui.overlay.classList.add('var-cancel');
+      ui.callIcon.textContent='❌';
+      ui.word.style.fontSize='';ui.word.style.lineHeight='';ui.word.textContent='İPTAL!';ui.word.style.color='#ff6a7b';
+      ui.callSub.textContent=v.reason+' · GOL SAYILMADI';ui.callSub.style.color='#ffb9c2';
+      ui.status.textContent='VAR · GOL İPTAL: '+v.reason;ui.status.style.color='#ff8b97';
+      shake=7;const m=goalMouth();burst(m.x,m.y,'#ff6a7b',18);
+    }
+  }
+  function endVAR(){
+    varState=null;
+    varClearOverlay();
+    if(finished)return;
+    ui.word.style.fontSize='';ui.word.style.lineHeight='';ui.word.textContent='GOL!';ui.word.style.color='';
+    ui.callKicker.textContent='GOL ANI';ui.callIcon.textContent='⚽';ui.callSub.textContent='';
+    ui.status.textContent='SIRADAKİ GOL KİMİN?';ui.status.style.color='';
+    goalCooldown=Math.max(goalCooldown,.55);
+    nextEventAt=Math.max(nextEventAt,elapsed+1.2);
+    balls=[makeBall(0),makeBall(1)];
+  }
+  // Logo fileye girince kale eksenli koordinatta yumuşak şekilde sekerek VAR kararı gelene kadar içeride kalır.
+  function netPhysics(b,dt){
+    const r=ballR(b.id),ca=Math.cos(goalAngle),sa=Math.sin(goalAngle);
+    const dx=b.x-CX,dy=b.y-CY;
+    let lx=dx*ca+dy*sa,ly=-dx*sa+dy*ca;          // lx: kale ekseni boyunca dışa, ly: teğet
+    let lvx=b.vx*ca+b.vy*sa,lvy=-b.vx*sa+b.vy*ca;
+    const f=Math.max(0,1-2.6*dt);lvx*=f;lvy*=f;    // sürtünme
+    lx+=lvx*dt;ly+=lvy*dt;
+    const rMax=R+NET-6,rMin=R-r-2,lyMax=GW-6;
+    if(lx>rMax){lx=rMax;lvx=-Math.abs(lvx)*0.35;} // file arkasına çarpma
+    if(lx<rMin){lx=rMin;lvx=Math.abs(lvx)*0.35;}
+    if(ly>lyMax){ly=lyMax;lvy=-Math.abs(lvy)*0.35;} // direğe çarpma
+    if(ly<-lyMax){ly=-lyMax;lvy=Math.abs(lvy)*0.35;}
+    b.x=CX+lx*ca-ly*sa;b.y=CY+lx*sa+ly*ca;
+    b.vx=lvx*ca-lvy*sa;b.vy=lvx*sa+lvy*ca;
+    b.angle+=dt*1.2;
+  }
+  /* --- Düdük: WebAudio ile sentezlenir, dosya gerektirmez --- */
+  let AC=null;
+  function audio(){try{if(!AC)AC=new (window.AudioContext||window.webkitAudioContext)();if(AC.state==='suspended')AC.resume();}catch(e){AC=null;}return AC;}
+  function whistle(blasts){const ac=audio();if(!ac)return;blasts=blasts||1;const dur=blasts>1?0.55:0.4;for(let i=0;i<blasts;i++){const t0=ac.currentTime+0.06+i*(dur+0.15);const o=ac.createOscillator(),g=ac.createGain(),lfo=ac.createOscillator(),lg=ac.createGain();o.type='triangle';o.frequency.setValueAtTime(2350,t0);o.frequency.linearRampToValueAtTime(2550,t0+dur*0.5);o.frequency.linearRampToValueAtTime(2350,t0+dur);lfo.type='sine';lfo.frequency.value=27;lg.gain.value=110;lfo.connect(lg);lg.connect(o.frequency);g.gain.setValueAtTime(0.0001,t0);g.gain.exponentialRampToValueAtTime(0.25,t0+0.035);g.gain.setValueAtTime(0.25,t0+dur-0.07);g.gain.exponentialRampToValueAtTime(0.0001,t0+dur);o.connect(g);g.connect(ac.destination);o.start(t0);o.stop(t0+dur+0.05);lfo.start(t0);lfo.stop(t0+dur+0.05);}}
+  document.addEventListener('pointerdown',()=>audio());
+  function update(dt){
+    if(paused||finished)return;
+    const hd=DUR()/2,wasHalf=elapsed>=hd?1:0;
+    elapsed=Math.min(DUR(),elapsed+dt);syncUI();updateCrowd(dt);
+    if(elapsed>=hd&&wasHalf===0){whistle(1);crowdBoost[0]=Math.max(crowdBoost[0],1.0);crowdBoost[1]=Math.max(crowdBoost[1],1.0);ui.status.textContent='İLK YARI BİTTİ — İKİNCİ YARI BAŞLIYOR!';ui.status.style.color='';if(!varState){showWhistleCard('İLK YARI BİTTİ',scoreLine(),'DEVRE ARASI','İLK YARI<br>BİTTİ');goalFlash=2.2;}}
+    goalCooldown=Math.max(0,goalCooldown-dt);goalFlash=Math.max(0,goalFlash-dt);eventFlash=Math.max(0,eventFlash-dt);shake=Math.max(0,shake-dt*35);
+    const sm=spdMul();
+    // Kale çemberin çizgisi üzerinde dönsün; hız kademeye göre ölçeklenir
+    goalAngle+=(0.55+0.28*Math.sin(elapsed*0.35))*sm*dt;
+    if(!varState&&goalFlash===0&&ui.overlay.classList.contains('visible')){ui.overlay.classList.remove('visible');ui.overlay.style.removeProperty('--call-glow');if(eventFlash>0){ui.status.textContent=eventStatus;ui.status.style.color=eventColor;}else{ui.status.textContent='SIRADAKİ GOL KİMİN?';ui.status.style.color='';}}
+    if(eventFlash===0&&ui.eventBanner.classList.contains('visible')){ui.eventBanner.classList.remove('visible');ui.eventBanner.style.removeProperty('--event-color');ui.eventBanner.style.removeProperty('--event-glow');if(goalFlash<=0&&!varState){ui.status.textContent='SIRADAKİ GOL KİMİN?';ui.status.style.color='';}}
+    // VAR: önce inceleme, sonra karar; logo bu sırada filede bekler.
+    if(varState){
+      varState.t+=dt;
+      if(varState.phase==='check'&&varState.t>=VAR.check)resolveVAR();
+      else if(varState.phase==='verdict'&&varState.t>=VAR.verdict)endVAR();
+    }
+    if(!varState&&elapsed>=nextEventAt&&goalFlash<=0&&eventFlash<=0&&goalCooldown<=0&&elapsed<DUR()-1.25&&balls.every(b=>b.inNet<=0)){announceRandomEvent();nextEventAt=elapsed+rand(2.55,3.45);}
+    if(!varState&&goalFlash<=0&&eventFlash<=0&&goalCooldown<=0&&cardPlan.length&&elapsed>=cardPlan[0].t&&elapsed<DUR()-1.3&&balls.every(b=>b.inNet<=0)){const c=cardPlan.shift();announceCard(c.key,c.id);}
+    let scored=false;
+    for(const b of balls){
+      // Fileye giren logo 0.5 sn içeride kalsın, sonra oyun devam etsin.
+      if(b.inNet>0){
+        b.inNet-=dt;netPhysics(b,dt);
+        b.trail.push({x:b.x,y:b.y});if(b.trail.length>11)b.trail.shift();
+        if(b.inNet<=0){if(varState)b.inNet=.25;else scored=true;} // VAR bitene kadar logo filede kalır; aksi hâlde gol sonrası iki top yeniden başlar
+        continue;
+      }
+      // Her logoya küçük rastgele yön değişimi.
+      let turn=rand(-1,1)*1.8*sm*dt,cs=Math.cos(turn),sn=Math.sin(turn),vx=b.vx;
+      b.vx=vx*cs-b.vy*sn;b.vy=vx*sn+b.vy*cs;
+      // Hareket halindeki kaleye çok hafif çekim — kısa videoda olay olsun.
+      let m=goalMouth();
+      b.vx+=(m.x-b.x)*0.30*sm*dt;b.vy+=(m.y-b.y)*0.30*sm*dt;
+      let speed=Math.hypot(b.vx,b.vy);
+      let maxSpd=150*sm,minSpd=95*sm;
+      if(speed>maxSpd){b.vx*=maxSpd/speed;b.vy*=maxSpd/speed;}
+      if(speed<minSpd){b.vx*=minSpd/speed;b.vy*=minSpd/speed;}
+      b.x+=b.vx*dt;b.y+=b.vy*dt;b.angle+=dt*(b.id?2.2:-2.5)*sm;
+      let r=ballR(b.id), dx=b.x-CX,dy=b.y-CY,d=Math.hypot(dx,dy);
+      if(d>=R-r){
+        let ca=Math.cos(goalAngle),sa=Math.sin(goalAngle);
+        let ly=-dx*sa+dy*ca; // kale ağzı koordinatı (teğet yön): direkler arası temas her zaman gol
+        let inMouth=Math.abs(ly)<=GW+r*0.5;
+        if(!varState&&inMouth&&b.vx*Math.cos(goalAngle)+b.vy*Math.sin(goalAngle)>0&&goalCooldown<=0&&elapsed<DUR()-1.6&&scores[b.id]<MAX_GOALS&&scores[0]+scores[1]<matchGoalCap){
+          // Her golde VAR devreye girmez, rastgele girer (~%40 VAR, ~%60 direkt gol)
+          if(Math.random()<0.40){
+            startVAR(b);
+          }else{
+            directGoal(b);
+          }
+          continue;
+        }else{
+          let nx=dx/d,ny=dy/d;
+          b.x=CX+nx*(R-r);b.y=CY+ny*(R-r);
+          let dot=b.vx*nx+b.vy*ny;
+          if(dot>0){b.vx-=2*dot*nx;b.vy-=2*dot*ny;b.vx+=rand(-10,10);b.vy+=rand(-10,10);if(Math.random()<.25)burst(b.x,b.y,teamColor(b.id),3);}
+        }
+      }
+      b.trail.push({x:b.x,y:b.y});if(b.trail.length>11)b.trail.shift();
+    }
+    if(scored)balls=[makeBall(0),makeBall(1)];
+    if(balls.length===2){let a=balls[0],b=balls[1],ra=ballR(a.id),rb=ballR(b.id),dx=b.x-a.x,dy=b.y-a.y,d=Math.hypot(dx,dy);if(d<ra+rb&&d>0){let nx=dx/d,ny=dy/d,relative=(b.vx-a.vx)*nx+(b.vy-a.vy)*ny;if(relative<0){a.vx+=relative*nx;a.vy+=relative*ny;b.vx-=relative*nx;b.vy-=relative*ny;}let overlap=(ra+rb-d)/2;a.x-=nx*overlap;a.y-=ny*overlap;b.x+=nx*overlap;b.y+=ny*overlap;burst((a.x+b.x)/2,(a.y+b.y)/2,'#e7fff0',4);}}
+    particles=particles.filter(p=>p.life>0);for(const p of particles){p.x+=p.vx*dt;p.y+=p.vy*dt;p.vy+=75*dt;p.life-=dt;}
+    if(elapsed>=DUR()){finished=true;whistle(2);if(scores[0]!==scores[1]){const w=scores[0]>scores[1]?0:1;crowdBoost[w]=2.0;punchChant(w,'chant');}else{crowdBoost[0]=0.85;crowdBoost[1]=0.85;}goalFlash=0;eventFlash=0;varState=null;varClearOverlay();ui.eventBanner.classList.remove('visible');ui.eventBanner.style.removeProperty('--event-color');ui.eventBanner.style.removeProperty('--event-glow');ui.status.style.color='';ui.status.textContent=scores[0]===scores[1]?'BERABERE!':'KAZANAN: '+teamName(scores[0]>scores[1]?0:1)+'!';showWhistleCard('MAÇ SONU',scoreLine()+' · '+(scores[0]===scores[1]?'BERABERE':'KAZANAN: '+teamName(scores[0]>scores[1]?0:1)),'FİNAL DÜDÜĞÜ');ui.play.innerHTML='▶ &nbsp; TEKRAR OYNA';}
+  }
+  function line(x1,y1,x2,y2,color,width=1){ctx.strokeStyle=color;ctx.lineWidth=width;ctx.beginPath();ctx.moveTo(x1,y1);ctx.lineTo(x2,y2);ctx.stroke();}
+  // Top üzerindeki logo: seçilen ikon, baş harf ya da yüklenen görsel. r = top yarıçapı.
+  function drawLogoOn(c,i,col,r){
+    const t=settings.teams[i],img=logoImgs[i], inner=Math.max(2,r-3);
+    if(t.logo==='image'&&img){c.save();c.beginPath();c.arc(0,0,inner,0,TAU);c.clip();c.drawImage(img,-inner,-inner,inner*2,inner*2);c.restore();return;}
+    if(t.logo==='letter'||t.logo==='image'){c.fillStyle=col;c.font='950 '+Math.max(8,Math.round(r))+'px Inter, system-ui, sans-serif';c.textAlign='center';c.textBaseline='middle';c.fillText(initial(i),0,1);return;}
+    const ic=ICONS[t.logo];if(!ic||!ic.p2d)return;
+    c.save();const s=(r*1.4)/24;c.scale(s,s);c.translate(-12,-12);c.fillStyle=col;c.fill(ic.p2d,'evenodd');c.restore();
+  }
+  // Yönetim paneli: saha topunun canlı önizlemesi (ölçek + logo + renk).
+  function drawPreview(i,t){
+    const g=previewCtx[i]; if(!g) return;
+    const S=PREVIEW_CSS, C=S/2;
+    g.clearRect(0,0,S,S);
+    let pitch=g.createRadialGradient(C*0.72,C*0.62,4,C,C,C);
+    pitch.addColorStop(0,'#2c6153');pitch.addColorStop(.55,'#204a42');pitch.addColorStop(1,'#0c2426');
+    g.fillStyle=pitch;g.beginPath();g.arc(C,C,C-0.5,0,TAU);g.fill();
+    g.strokeStyle='rgba(168,241,195,.30)';g.lineWidth=1.5;g.beginPath();g.arc(C,C,C-7,0,TAU);g.stroke();
+    g.strokeStyle='rgba(214,255,229,.14)';g.lineWidth=1;g.beginPath();g.arc(C,C,22,0,TAU);g.stroke();
+    g.fillStyle='rgba(214,255,229,.4)';g.beginPath();g.arc(C,C,1.6,0,TAU);g.fill();
+    const col=teamColor(i), r=18*(settings.teams[i].scale||1);
+    g.save();g.translate(C,C);g.rotate(t*(i?0.7:-0.8));
+    g.shadowColor=col;g.shadowBlur=12*(r/18);
+    g.fillStyle=mix(col,'#0b2124',.78);g.strokeStyle=col;g.lineWidth=Math.max(1.4,2.2*(r/18));
+    g.beginPath();g.arc(0,0,r,0,TAU);g.fill();g.stroke();g.shadowBlur=0;
+    g.strokeStyle='#ffffff54';g.lineWidth=1;g.beginPath();g.arc(0,0,Math.max(2,r-4),0,TAU);g.stroke();
+    drawLogoOn(g,i,col,r);g.restore();
+  }
+  function drawPreviews(t){drawPreview(0,t);drawPreview(1,t);}
+  function draw(t){
+    ctx.clearRect(0,0,W,H);ctx.save();if(shake)ctx.translate(rand(-shake,shake)*.35,rand(-shake,shake)*.35);
+    // Stadyum ışığı ve yayın izi.
+    let glow=ctx.createRadialGradient(CX,CY,30,CX,CY,280);glow.addColorStop(0,'#69d7a911');glow.addColorStop(.65,'#3be5b209');glow.addColorStop(1,'#00000000');ctx.fillStyle=glow;ctx.fillRect(0,165,400,440);
+    for(let i=0;i<20;i++){let x=(i*89+23)%400,y=220+(i*127)%360;ctx.fillStyle=`rgba(187,249,215,${.12+.08*Math.sin(t*1.5+i)})`;ctx.fillRect(x,y,1.5,1.5);}
+    drawCrowd(t);
+    let a0=goalAngle+HALF_GAP, a1=goalAngle+TAU-HALF_GAP;
+    // Kale: dikdörtgen direkler + belirgin file. Çemberin çizgisi üzerinde kaleyle birlikte döner.
+    ctx.save();ctx.translate(CX,CY);ctx.rotate(goalAngle);
+    // File zemini
+    ctx.save();ctx.shadowColor='#9cffe0';ctx.shadowBlur=22;ctx.fillStyle='#0f3331';ctx.fillRect(PX,-GW,BX-PX,GW*2);ctx.restore();
+    // File örgüsü (kare ağ + çapraz ipler)
+    ctx.save();ctx.beginPath();ctx.rect(PX,-GW,BX-PX,GW*2);ctx.clip();
+    for(let x=PX+6;x<BX;x+=6)line(x,-GW,x,GW,'rgba(222,255,238,.62)');
+    for(let y=-GW+6;y<GW;y+=6)line(PX,y,BX,y,'rgba(222,255,238,.62)');
+    for(let k=-GW-NET;k<GW+NET;k+=12){line(PX,k,BX,k+(BX-PX),'rgba(222,255,238,.18)');line(PX,k,BX,k-(BX-PX),'rgba(222,255,238,.18)');}
+    // Filenin arka tarafına derinlik gölgesi
+    let depth=ctx.createLinearGradient(PX,0,BX,0);depth.addColorStop(0,'rgba(0,0,0,0)');depth.addColorStop(1,'rgba(0,0,0,.35)');ctx.fillStyle=depth;ctx.fillRect(PX,-GW,BX-PX,GW*2);
+    ctx.restore();
+    // Kale çerçevesi: iki dikdörtgen direk + üst direk, tek parça ve çıkıntısız.
+    ctx.save();ctx.shadowColor='#00ffd5';ctx.shadowBlur=18;ctx.fillStyle='#f0fffa';framePath();ctx.fill();ctx.restore();
+    ctx.strokeStyle='#0d2a28';ctx.lineWidth=1;ctx.lineJoin='miter';framePath();ctx.stroke();
+    ctx.restore();
+    // Çember saha çizgileri.
+    ctx.save();ctx.beginPath();ctx.arc(CX,CY,R,0,TAU);ctx.clip();
+    let pitch=ctx.createRadialGradient(170,320,10,CX,CY,R*1.5);pitch.addColorStop(0,'#2c6153');pitch.addColorStop(.5,'#204a42');pitch.addColorStop(1,'#102f30');ctx.fillStyle=pitch;ctx.fillRect(CX-R,CY-R,R*2,R*2);
+    for(let i=-4;i<5;i++){ctx.fillStyle=i%2===0?'#cbffe904':'#0000000a';ctx.fillRect(CX-R,CY+i*37,R*2,37);}
+    ctx.strokeStyle='#d6ffe51c';ctx.lineWidth=1;ctx.beginPath();ctx.arc(CX,CY,66,0,TAU);ctx.stroke();line(CX-R,CY,CX+R,CY,'#d6ffe51a');
+    ctx.fillStyle='#d6ffe55a';ctx.beginPath();ctx.arc(CX,CY,2,0,TAU);ctx.fill();
+    ctx.restore();
+    // Direkler arasında silik gol çizgisi
+    const inset=Math.asin((POST/2+1)/R);
+    ctx.save();ctx.strokeStyle='rgba(0,255,213,.22)';ctx.lineWidth=2;ctx.lineCap='butt';ctx.beginPath();ctx.arc(CX,CY,R,goalAngle-HALF_GAP+inset,goalAngle+HALF_GAP-inset);ctx.stroke();ctx.restore();
+    // Tek renk neon çember çizgisi (1/3 daha ince, tek renk parlama)
+    ctx.save();ctx.shadowColor='#00ffd5';ctx.shadowBlur=20;ctx.strokeStyle='rgba(0,255,213,.38)';ctx.lineWidth=6;ctx.lineCap='round';ctx.beginPath();ctx.arc(CX,CY,R,a0,a1);ctx.stroke();ctx.restore();
+    ctx.save();ctx.shadowColor='#00ffd5';ctx.shadowBlur=10;ctx.strokeStyle='#00ffd5';ctx.lineWidth=3;ctx.lineCap='round';ctx.beginPath();ctx.arc(CX,CY,R,a0,a1);ctx.stroke();ctx.restore();
+    ctx.save();ctx.strokeStyle='#f0fffa';ctx.lineWidth=1.2;ctx.lineCap='round';ctx.beginPath();ctx.arc(CX,CY,R,a0,a1);ctx.stroke();ctx.restore();
+    // Kale yönünü gösteren küçük ok işareti.
+
+    for(const b of balls){
+      const col=teamColor(b.id), r=ballR(b.id);
+      for(let i=0;i<b.trail.length;i++){let p=b.trail[i];ctx.beginPath();ctx.fillStyle=rgba(col,i/b.trail.length*.16);ctx.arc(p.x,p.y,r*(.35+i/b.trail.length*.5),0,TAU);ctx.fill();}
+      ctx.save();ctx.translate(b.x,b.y);ctx.rotate(b.angle);ctx.shadowColor=col;ctx.shadowBlur=26*(r/BR);ctx.fillStyle=mix(col,'#0b2124',.78);ctx.strokeStyle=col;ctx.lineWidth=Math.max(1.6,2.5*(r/BR));ctx.beginPath();ctx.arc(0,0,r,0,TAU);ctx.fill();ctx.stroke();ctx.shadowBlur=0;
+      ctx.strokeStyle='#ffffff54';ctx.lineWidth=1;ctx.beginPath();ctx.arc(0,0,Math.max(2,r-4),0,TAU);ctx.stroke();
+      drawLogoOn(ctx,b.id,col,r);ctx.restore();
+    }
+    for(const p of particles){ctx.globalAlpha=Math.max(0,p.life/p.max);ctx.fillStyle=p.color;ctx.fillRect(p.x,p.y,p.size,p.size);}ctx.globalAlpha=1;ctx.restore();
+  }
+  function frame(ms){if(!last)last=ms;let dt=Math.min((ms-last)/1000,.033);last=ms;update(dt);draw(ms/1000);if(isOpen())drawPreviews(ms/1000);requestAnimationFrame(frame);}
+  ui.play.addEventListener('click',()=>{if(finished){reset();return;}paused=!paused;ui.play.innerHTML=paused?'▶ &nbsp; DEVAM ET':'⏸ &nbsp; DURAKLAT';});
+  ui.reset.addEventListener('click',reset);
+
+  /* =========================================================
+     YÖNETİM PANELİ
+     ========================================================= */
+  const panel=$('adminPanel'), toggleBtn=$('adminToggle');
+  const isOpen=()=>document.body.classList.contains('panel-open');
+  function openPanel(){document.body.classList.add('panel-open');toggleBtn.setAttribute('aria-expanded','true');panel.inert=false;}
+  function closePanel(){document.body.classList.remove('panel-open');toggleBtn.setAttribute('aria-expanded','false');panel.inert=true;}
+  const togglePanel=()=>isOpen()?closePanel():openPanel();
+  toggleBtn.addEventListener('click',togglePanel);
+  $('adminClose').addEventListener('click',closePanel);
+  $('adminBackdrop').addEventListener('click',closePanel);
+  document.querySelector('.stage').addEventListener('dblclick',togglePanel); // kayıt modunda gizli düğme için gizli kapı: sahneye çift tıkla
+  document.addEventListener('keydown',e=>{audio();const tag=(e.target&&e.target.tagName)||'';const typing=/INPUT|TEXTAREA|SELECT/.test(tag);if(e.key==='Escape'&&isOpen())closePanel();else if(!typing&&(e.key==='y'||e.key==='Y'))togglePanel();});
+
+  // Takım kartları (iki takım için aynı şablon)
+  function teamCard(i){
+    const opts=Object.keys(ICONS).map(k=>`<button type="button" class="logo-opt" data-logo="${k}" title="${ICONS[k].label}" aria-label="${ICONS[k].label}">${iconSvg(k)}</button>`).join('')
+      +`<button type="button" class="logo-opt" data-logo="letter" title="Baş harf" aria-label="Baş harf"><span class="letter">Aa</span></button>`
+      +`<label class="logo-opt" data-logo="image" title="Görsel yükle"><span class="up" data-role="upLabel">LOGO<br>YÜKLE</span><input type="file" accept="image/*" aria-label="Logo görseli yükle"></label>`;
+    return `<section class="card team-card" data-team="${i}">
+      <div class="card-head"><span class="swatch"></span><h3>TAKIM ${i+1}</h3><span class="sub">${i===0?'Skor tablosunda sol':'Skor tablosunda sağ'}</span></div>
+      <label class="field"><span>Takım adı</span><input type="text" data-role="name" maxlength="14" placeholder="TAKIM ${i+1}" autocomplete="off" spellcheck="false"></label>
+      <div class="field"><span class="field-label">Renk</span><div class="color-row"><input type="color" data-role="color" aria-label="Takım rengi"><div class="presets">${PRESETS.map(c=>`<button type="button" class="preset" data-color="${c}" style="background:${c};color:${c}" aria-label="Renk ${c}"></button>`).join('')}</div></div></div>
+      <div class="field"><span class="field-label">Logo</span><div class="logo-grid">${opts}</div><div class="logo-help">Kendi logonu yüklersen top üzerinde ve skor tablosunda yuvarlak kırpılarak görünür.</div></div>
+      <div class="field scale-field"><span class="field-label">Sahadaki logo ölçeği</span>
+        <div class="scale-block">
+          <div class="preview-wrap">
+            <canvas data-role="preview" width="208" height="208" aria-hidden="true"></canvas>
+            <span class="scale-caption">Önizleme</span>
+          </div>
+          <div class="scale-side">
+            <div class="range-row"><input type="range" data-role="scale" min="50" max="180" step="5" aria-label="Sahadaki logo ölçeği"><span class="range-val" data-role="scaleVal">100%</span></div>
+            <div class="scale-marks"><span>Küçük</span><span>100%</span><span>Büyük</span></div>
+            <p class="logo-help">Sahadaki topun gerçek oranı. Sürüklerken önizleme ve maç anında güncellenir.</p>
+          </div>
+        </div>
+      </div>
+    </section>`;
+  }
+  const body=$('adminBody');
+  body.insertAdjacentHTML('afterbegin',teamCard(0)+teamCard(1));
+  const refreshers=[];
+  body.querySelectorAll('.team-card').forEach(card=>{
+    const i=+card.dataset.team, T=()=>settings.teams[i];
+    const nameIn=card.querySelector('[data-role=name]'), colorIn=card.querySelector('[data-role=color]'), swatch=card.querySelector('.swatch');
+    const imgOpt=card.querySelector('.logo-opt[data-logo=image]'), upLabel=imgOpt.querySelector('[data-role=upLabel]'), fileIn=imgOpt.querySelector('input[type=file]');
+    const letterEl=card.querySelector('.logo-opt[data-logo=letter] .letter');
+    const scaleIn=card.querySelector('[data-role=scale]'), scaleVal=card.querySelector('[data-role=scaleVal]');
+    const previewCv=card.querySelector('[data-role=preview]');
+    if(previewCv){
+      const dpr=Math.min(window.devicePixelRatio||1,3);
+      previewCv.width=PREVIEW_CSS*dpr;previewCv.height=PREVIEW_CSS*dpr;
+      const g=previewCv.getContext('2d');g.setTransform(dpr,0,0,dpr,0,0);previewCtx[i]=g;
+    }
+    function refresh(){
+      if(nameIn.value!==T().name)nameIn.value=T().name;
+      colorIn.value=T().color;swatch.style.color=T().color;letterEl.textContent=initial(i);
+      const pct=Math.round((T().scale||1)*100);scaleIn.value=pct;scaleVal.textContent=pct+'%';
+      card.querySelectorAll('.preset').forEach(p=>p.classList.toggle('active',p.dataset.color.toLowerCase()===T().color.toLowerCase()));
+      card.querySelectorAll('.logo-opt').forEach(o=>{o.classList.toggle('active',o.dataset.logo===T().logo);o.style.color=T().color;});
+      let img=imgOpt.querySelector('img');
+      if(T().image){if(!img){img=document.createElement('img');img.alt='';imgOpt.insertBefore(img,imgOpt.firstChild);}if(img.getAttribute('src')!==T().image)img.src=T().image;upLabel.style.display='none';}
+      else{if(img)img.remove();upLabel.style.display='';}
+    }
+    refreshers.push(refresh);
+    const commit=()=>{refresh();applyLive();save();};
+    scaleIn.addEventListener('input',()=>{T().scale=Math.min(1.8,Math.max(0.5,(+scaleIn.value)/100));scaleVal.textContent=Math.round(T().scale*100)+'%';applyLive();save();});
+    scaleIn.addEventListener('dblclick',()=>{T().scale=1;commit();});
+    nameIn.addEventListener('input',()=>{T().name=nameIn.value.slice(0,14);commit();});
+    colorIn.addEventListener('input',()=>{if(isHex(colorIn.value)){T().color=colorIn.value;commit();}});
+    card.querySelectorAll('.preset').forEach(p=>p.addEventListener('click',()=>{T().color=p.dataset.color;commit();}));
+    card.querySelectorAll('.logo-opt[data-logo]:not([data-logo=image])').forEach(o=>o.addEventListener('click',()=>{T().logo=o.dataset.logo;commit();}));
+    imgOpt.addEventListener('click',()=>{if(T().image&&T().logo!=='image'){T().logo='image';commit();}});
+    fileIn.addEventListener('change',()=>{
+      const f=fileIn.files&&fileIn.files[0];if(!f)return;
+      const rd=new FileReader();
+      rd.onload=()=>{const im=new Image();im.onload=()=>{
+        // 192px kare, "cover" kırpma — localStorage'a sığsın diye küçültülür.
+        const S=192,c=document.createElement('canvas');c.width=c.height=S;const g=c.getContext('2d');
+        const sc=Math.max(S/im.width,S/im.height),w=im.width*sc,h=im.height*sc;g.drawImage(im,(S-w)/2,(S-h)/2,w,h);
+        let data;try{data=c.toDataURL('image/png');}catch(e){data=rd.result;}
+        T().image=data;T().logo='image';loadImage(i);commit();note('Logo yüklendi ✓',true);fileIn.value='';
+      };im.onerror=()=>note('Görsel okunamadı, başka bir dosya dene.');im.src=rd.result;};
+      rd.readAsDataURL(f);
+    });
+  });
+
+  // Maç ayarları: süre & 5 kademeli hız
+  const durIn=$('duration'), durVal=$('durationVal');
+  const durPresetBtns=[...$('durPresets').querySelectorAll('button')];
+  function formatDurText(sec){sec=Math.round(sec);return `${sec} sn (Yarı: ${Math.round(sec/2)} sn)`;}
+  function updateDurUI(){
+    durIn.value=settings.duration;
+    durVal.textContent=formatDurText(settings.duration);
+    durPresetBtns.forEach(b=>b.classList.toggle('active',+b.dataset.dur===settings.duration));
+  }
+  durIn.addEventListener('input',()=>{settings.duration=+durIn.value;updateDurUI();applyLive();save();});
+  durPresetBtns.forEach(b=>b.addEventListener('click',()=>{settings.duration=+b.dataset.dur;updateDurUI();applyLive();save();}));
+
+  const speedSeg=$('speedSeg'), speedVal=$('speedVal');
+  const segBtns=[...speedSeg.querySelectorAll('button')];
+  function updateSpeedUI(){
+    speedVal.textContent=spdLabel();
+    segBtns.forEach(b=>b.classList.toggle('active',+b.dataset.v===settings.speed));
+  }
+  segBtns.forEach(b=>b.addEventListener('click',()=>{settings.speed=+b.dataset.v;updateSpeedUI();save();}));
+
+  // Kart planı: manuel sarı/kırmızı sayıları (0 = kartsız maç)
+  const cardIns={y0:$('cy0'),r0:$('cr0'),y1:$('cy1'),r1:$('cr1')};
+  function updateCardUI(){const p=cardTargets();cardIns.y0.value=p.y0;cardIns.r0.value=p.r0;cardIns.y1.value=p.y1;cardIns.r1.value=p.r1;for(let i=0;i<2;i++){const col=settings.teams[i].color,d=$('cardDot'+i);if(d){d.style.background=col;d.style.boxShadow='0 0 8px '+col;}$('cardTeam'+i).textContent=teamName(i);}}
+  Object.values(cardIns).forEach(inp=>inp.addEventListener('change',()=>{settings.cardPlan={y0:clampCard(cardIns.y0.value,6),r0:clampCard(cardIns.r0.value,2),y1:clampCard(cardIns.y1.value,6),r1:clampCard(cardIns.r1.value,2)};updateCardUI();rebuildCardPlan(elapsed);save();note('Kart planı güncellendi.',true);}));
+
+  // Kayıt modu
+  const hideIn=$('hideBtn');
+  hideIn.addEventListener('change',()=>{settings.hideButton=hideIn.checked;applyLive();save();if(hideIn.checked)note('Düğme gizlendi. Paneli açmak için Y tuşu ya da sahneye çift tık.',true);});
+
+  function refreshAll(){refreshers.forEach(fn=>fn());updateDurUI();updateSpeedUI();updateCardUI();hideIn.checked=settings.hideButton;}
+
+  // Uygula & yeniden başlat
+  $('applyBtn').addEventListener('click',()=>{clearTimeout(saveTimer);try{localStorage.setItem(STORE_KEY,JSON.stringify(settings));}catch(e){}applyLive();reset();closePanel();});
+  // Varsayılanlar (iki adımlı onay — diyalog kutusu yok)
+  const defBtn=$('defaultsBtn');let armed=0;
+  defBtn.addEventListener('click',()=>{
+    if(!armed){armed=setTimeout(()=>{armed=0;defBtn.textContent='VARSAYILAN';defBtn.classList.remove('armed');},3000);defBtn.textContent='EMİN MİSİN?';defBtn.classList.add('armed');return;}
+    clearTimeout(armed);armed=0;defBtn.textContent='VARSAYILAN';defBtn.classList.remove('armed');
+    settings=clone(DEFAULTS);loadImage(0);loadImage(1);refreshAll();applyLive();save();reset();note('Varsayılan ayarlara dönüldü.',true);
+  });
+
+  /* ---------- Başlat ---------- */
+  loadImage(0);loadImage(1);refreshAll();applyLive();closePanel();reset();
+  const dpr=Math.min(window.devicePixelRatio||1,3);canvas.width=W*dpr;canvas.height=H*dpr;ctx.scale(dpr,dpr);requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>
