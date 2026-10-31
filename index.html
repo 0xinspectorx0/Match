@@ -200,9 +200,9 @@
   .dur-presets button:hover { background:#113331; color:#dcfaed; border-color:#a5d7c355; }
   .dur-presets button.active { background:#1e524d; color:#8affcf; border-color:#00ffd5; box-shadow:0 0 8px rgba(0,255,213,.25); }
   .seg { display:grid; grid-template-columns:repeat(3,1fr); gap:6px; }
-  .seg.seg-5 { display:grid; grid-template-columns:repeat(5,1fr); gap:4px; }
+  .seg.seg-10 { display:grid; grid-template-columns:repeat(10,1fr); gap:3px; }
   .seg button { height:34px; border-radius:8px; border:1px solid #a5d7c333; background:#07191b; color:#cfeee0; font:850 10px/1 inherit; letter-spacing:.12em; cursor:pointer; transition:background .15s; }
-  .seg.seg-5 button { height:34px; font-size:12px; font-weight:850; letter-spacing:.06em; }
+  .seg.seg-10 button { height:34px; font-size:11px; font-weight:850; letter-spacing:0; }
   .seg button:hover { background:#133634; }
   .seg button.active { background:#b8e7cd; color:#0b2927; border-color:#b8e7cd; box-shadow:0 0 10px rgba(184,231,205,.3); }
   .goal-odds { margin-top:12px; padding-top:11px; border-top:1px dashed #a5d7c322; }
@@ -284,13 +284,18 @@
         </div>
       </div>
       <div class="field" style="margin-bottom:0">
-        <div class="field-head-row"><span class="field-label">Maç hızı (5 kademe)</span><span class="range-val" id="speedVal">3. Kademe · Normal</span></div>
-        <div class="seg seg-5" id="speedSeg">
-          <button type="button" data-v="1" title="1. Kademe: Çok Yavaş (0.6x)">1</button>
-          <button type="button" data-v="2" title="2. Kademe: Yavaş (0.8x)">2</button>
-          <button type="button" data-v="3" title="3. Kademe: Normal (1.0x)">3</button>
-          <button type="button" data-v="4" title="4. Kademe: Hızlı (1.35x)">4</button>
-          <button type="button" data-v="5" title="5. Kademe: Çok Hızlı (1.75x)">5</button>
+        <div class="field-head-row"><span class="field-label">Maç hızı (10 kademe)</span><span class="range-val" id="speedVal">1x</span></div>
+        <div class="seg seg-10" id="speedSeg">
+          <button type="button" data-v="1" title="1x hız">1x</button>
+          <button type="button" data-v="2" title="2x hız">2x</button>
+          <button type="button" data-v="3" title="3x hız">3x</button>
+          <button type="button" data-v="4" title="4x hız">4x</button>
+          <button type="button" data-v="5" title="5x hız">5x</button>
+          <button type="button" data-v="6" title="6x hız">6x</button>
+          <button type="button" data-v="7" title="7x hız">7x</button>
+          <button type="button" data-v="8" title="8x hız">8x</button>
+          <button type="button" data-v="9" title="9x hız">9x</button>
+          <button type="button" data-v="10" title="10x hız">10x</button>
         </div>
       </div>
       <div class="goal-odds" aria-label="Maç toplam gol olasılıkları">
@@ -333,19 +338,13 @@
      AYARLAR (yönetim panelinden değişir, localStorage'da saklanır)
      ========================================================= */
   const STORE_KEY='logoArena.settings.v1';
-  const SPEED_CONFIG={
-    1:{mul:0.60,label:'1. Kademe · Çok Yavaş',short:'1'},
-    2:{mul:0.80,label:'2. Kademe · Yavaş',short:'2'},
-    3:{mul:1.00,label:'3. Kademe · Normal',short:'3'},
-    4:{mul:1.35,label:'4. Kademe · Hızlı',short:'4'},
-    5:{mul:1.75,label:'5. Kademe · Çok Hızlı',short:'5'}
-  };
-  const spdMul=()=>(SPEED_CONFIG[settings.speed]||SPEED_CONFIG[3]).mul;
-  const spdLabel=()=>(SPEED_CONFIG[settings.speed]||SPEED_CONFIG[3]).label;
+  const SPEED_CONFIG={}; for(let k=1;k<=10;k++)SPEED_CONFIG[k]={mul:k,label:k+'x',short:String(k)};
+  const spdMul=()=>(SPEED_CONFIG[settings.speed]||SPEED_CONFIG[1]).mul;
+  const spdLabel=()=>(SPEED_CONFIG[settings.speed]||SPEED_CONFIG[1]).label;
 
   const DEFAULTS={
     teams:[{name:'ALEV',color:'#ff8758',logo:'flame',image:null,scale:1},{name:'ŞİMŞEK',color:'#6ce5e5',logo:'bolt',image:null,scale:1}],
-    duration:60, speed:3, cardPlan:{y0:1,r0:0,y1:1,r1:0}, title1:'BİR ÇEMBER.', title2:'DÖNEN KALE.', hideButton:false
+    duration:60, speed:1, cardPlan:{y0:1,r0:0,y1:1,r1:0}, title1:'BİR ÇEMBER.', title2:'DÖNEN KALE.', hideButton:false
   };
   const ICONS={
     flame:{label:'Alev',d:'M12.6 1.5c.6 4.3-2.4 5.7-1.1 8.2 2.1-.8 3.2-2.4 3.4-4.2 3.7 3.1 5.4 6.7 5.1 9.8-.4 4.5-3.6 7.4-8 7.4s-7.6-2.9-8-7.3C3.7 11.6 6.3 7.9 12.6 1.5Zm-.4 11.6c-2.1 2.7-3.4 4-3.1 6 .2 1.7 1.3 2.7 2.9 2.7s2.9-1.2 3-2.8c.1-1.4-.8-2.6-2.8-5.9Z'},
@@ -374,7 +373,7 @@
     });
     s.duration=Math.min(180,Math.max(10,Math.round((+s.duration||60)/5)*5));
     if(s.speed===undefined&&s.goalSpeed!==undefined){s.speed=+s.goalSpeed<=0.7?1:(+s.goalSpeed>=1.5?4:3);}
-    s.speed=[1,2,3,4,5].includes(+s.speed)?+s.speed:3;
+    s.speed=(+s.speed>=1&&+s.speed<=10&&Number.isInteger(+s.speed))?+s.speed:1;
     s.title1=String(s.title1??DEFAULTS.title1).slice(0,18); s.title2=String(s.title2??DEFAULTS.title2).slice(0,18);
     s.hideButton=!!s.hideButton; return s;
   }
