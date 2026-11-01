@@ -412,7 +412,7 @@
      ========================================================= */
   const canvas=$('game'), ctx=canvas.getContext('2d');
   const ui={timer:$('timer'),timerLabel:$('timerLabel'),scores:[$('score0'),$('score1')],names:[$('name0'),$('name1')],badges:[$('badge0'),$('badge1')],status:$('status'),overlay:$('goalOverlay'),word:$('goalWord'),callKicker:$('callKicker'),callIcon:$('callIcon'),callSub:$('callSub'),eventBanner:$('eventBanner'),eventIcon:$('eventIcon'),eventKicker:$('eventKicker'),eventWord:$('eventWord'),eventSub:$('eventSub'),progress:$('progress'),fuseSpark:$('fuseSpark'),play:$('playBtn'),reset:$('resetBtn')};
-  const W=400,H=711,CX=200,CY=398,R=147,BR=17,NET=36,HALF_GAP=0.30;
+  const W=400,H=711,CX=200,CY=398,R=147,BR=17,NET=36,HALF_GAP=0.36;
   const ballR=id=>BR*(settings.teams[id].scale||1);
   // Kale geometrisi (kale yerel koordinatlarında: x = merkezden dışa, y = teğet yön)
   const GW=R*Math.sin(HALF_GAP), PX=R-6, BX=R+NET, POST=7;
@@ -941,7 +941,7 @@
     goalCooldown=Math.max(0,goalCooldown-dt);goalFlash=Math.max(0,goalFlash-dt);eventFlash=Math.max(0,eventFlash-dt);shake=Math.max(0,shake-dt*35);
     const sm=spdMul();
     // Kale çemberin çizgisi üzerinde dönsün; hız kademeye göre ölçeklenir
-    goalAngle+=(0.55+0.28*Math.sin(elapsed*0.35))*sm*dt;
+    goalAngle+=(0.42+0.20*Math.sin(elapsed*0.35))*sm*dt;
     if(!varState&&goalFlash===0&&ui.overlay.classList.contains('visible')){ui.overlay.classList.remove('visible');ui.overlay.style.removeProperty('--call-glow');if(eventFlash>0){ui.status.textContent=eventStatus;ui.status.style.color=eventColor;}else{ui.status.textContent='SIRADAKİ GOL KİMİN?';ui.status.style.color='';}}
     if(eventFlash===0&&ui.eventBanner.classList.contains('visible')){ui.eventBanner.classList.remove('visible');ui.eventBanner.style.removeProperty('--event-color');ui.eventBanner.style.removeProperty('--event-glow');if(goalFlash<=0&&!varState){ui.status.textContent='SIRADAKİ GOL KİMİN?';ui.status.style.color='';}}
     // VAR: önce inceleme, sonra karar; logo bu sırada filede bekler.
@@ -972,7 +972,7 @@
       b.vx=vx*cs-b.vy*sn;b.vy=vx*sn+b.vy*cs;
       // Hareket halindeki kaleye çok hafif çekim — kısa videoda olay olsun.
       let m=goalMouth();
-      b.vx+=(m.x-b.x)*0.30*sm*dt;b.vy+=(m.y-b.y)*0.30*sm*dt;
+      b.vx+=(m.x-b.x)*0.62*sm*dt;b.vy+=(m.y-b.y)*0.62*sm*dt;
       // Hız düzenleme YUMUŞAK: çarpışmadan gelen ekstra hız sürtünmeyle yavaş söner, yavaşlayan logo kendi "motoru" ile toparlanır
       let speed=Math.hypot(b.vx,b.vy)||1;
       let maxSpd=150*sm,minSpd=95*sm;
@@ -985,7 +985,7 @@
       if(d>=R-r){
         let ca=Math.cos(goalAngle),sa=Math.sin(goalAngle);
         let ly=-dx*sa+dy*ca; // kale ağzı koordinatı (teğet yön): direkler arası temas her zaman gol
-        let inMouth=Math.abs(ly)<=GW+r*0.5;
+        let inMouth=Math.abs(ly)<=GW+r*0.9;
         if(!varState&&inMouth&&b.vx*Math.cos(goalAngle)+b.vy*Math.sin(goalAngle)>0&&goalCooldown<=0&&elapsed<DUR()-1.6&&scores[b.id]<MAX_GOALS&&scores[0]+scores[1]<matchGoalCap){
           // Her golde VAR devreye girmez, rastgele girer (~%40 VAR, ~%60 direkt gol)
           if(Math.random()<0.40){
