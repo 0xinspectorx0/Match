@@ -436,7 +436,15 @@
   function rollMatchGoalCap(){const profile=weightedPick(GOAL_PROFILES.map((p,i)=>[i,p.weight]));return weightedPick(GOAL_PROFILES[profile].scores);}
   function norm(a){while(a>Math.PI)a-=TAU;while(a<-Math.PI)a+=TAU;return a}
   function fmt(s){s=Math.max(0,Math.ceil(s));return String(Math.floor(s/60)).padStart(2,'0')+':'+String(s%60).padStart(2,'0');}
-  function makeBall(id){let a=rand(0,TAU),speed=rand(98,132)*spdMul();return {id,x:CX+Math.cos(a)*rand(20,70),y:CY+Math.sin(a)*rand(20,70),vx:Math.cos(a+rand(-1,1))*speed,vy:Math.sin(a+rand(-1,1))*speed,angle:0,spin:(id?2.2:-2.5)*spdMul(),trail:[],inNet:0};}
+  function makeBall(id,axis,curve){
+    // İki logo karşılıklı doğar: ilk hedefleri birbirine çarpıp sonra çembere açılmaktır.
+    const side=id===0?-1:1,sm=spdMul(),r=ballR(id),dist=Math.max(50,r+30);
+    const nx=Math.cos(axis),ny=Math.sin(axis),tx=-ny,ty=nx,speed=rand(108,128)*sm;
+    return {id,x:CX+nx*side*dist,y:CY+ny*side*dist,
+      vx:-nx*side*speed+tx*curve,vy:-ny*side*speed+ty*curve,
+      angle:0,spin:(id?2.2:-2.5)*sm,trail:[],inNet:0,seekWall:false};
+  }
+  function makeBallPair(){const axis=rand(0,TAU),curve=rand(-16,16)*spdMul();return [makeBall(0,axis,curve),makeBall(1,axis,curve)];}
   /* ---------- Taraftar tribünleri: sol/sağ alt; basamak sıraları hâlinde, çembere kadar; zıplayan + tezahürat; zemin yukarı doğru silinen gradient ---------- */
   const SKINS=['#f3d2b5','#e8c19a','#c9956c','#8d5a32','#f6e0c8','#d4a574','#ffe0c2'];
   const CHANTS_SHORT=['OLÉ OLÉ OLÉ!','GOL GOL GOL!','BU MAÇ BİZİM!','HÜCUM HÜCUM!','OLEY OLEY!','ATEŞ GİBİ!','KALE KALE!','WUH WUH WUH!','İNİNİNİ!','HER YERDE!','SİZİ SEVİYORUZ!','BU TRIBÜN ATEŞ!'];
@@ -674,7 +682,7 @@
     else el.innerHTML=iconSvg(t.logo);}
   // Ayarları sahneye anında yansıt (maçı bozmadan).
   function applyLive(){for(let i=0;i<2;i++){ui.names[i].textContent=teamName(i);renderBadge(i);}renderGoals();document.body.classList.toggle('hide-admin-btn',settings.hideButton);syncUI();drawPreviews((typeof performance!=='undefined'?performance.now():0)/1000);}
-  function reset(){varState=null;balls=[makeBall(0),makeBall(1)];particles=[];elapsed=0;paused=false;finished=false;goalFlash=0;eventFlash=0;goalCooldown=0;scores=[0,0];matchGoalCap=rollMatchGoalCap();cards=[{yellow:0,red:0},{yellow:0,red:0}];goalLog=[[],[]];eventDeck=[];nextEventAt=rand(1.1,1.8);rebuildCardPlan(0);spawnCrowd();eventStatus='';eventColor='';goalAngle=-Math.PI/2;ui.scores.forEach(e=>e.textContent='0');ui.status.textContent='İLK GOLÜ KİM ATACAK?';ui.status.style.color='';varClearOverlay();ui.eventBanner.classList.remove('visible');ui.eventBanner.style.removeProperty('--event-color');ui.eventBanner.style.removeProperty('--event-glow');ui.word.style.fontSize='';ui.word.style.lineHeight='';ui.word.textContent='GOL!';ui.word.style.color='';ui.callKicker.textContent='GOL ANI';ui.callIcon.textContent='⚽';ui.callSub.textContent='';ui.callSub.style.color='';ui.play.innerHTML='⏸ &nbsp; DURAKLAT';renderCards();renderGoals();syncUI();}
+  function reset(){varState=null;balls=makeBallPair();particles=[];elapsed=0;paused=false;finished=false;goalFlash=0;eventFlash=0;goalCooldown=0;scores=[0,0];matchGoalCap=rollMatchGoalCap();cards=[{yellow:0,red:0},{yellow:0,red:0}];goalLog=[[],[]];eventDeck=[];nextEventAt=rand(1.1,1.8);rebuildCardPlan(0);spawnCrowd();eventStatus='';eventColor='';goalAngle=-Math.PI/2;ui.scores.forEach(e=>e.textContent='0');ui.status.textContent='İLK GOLÜ KİM ATACAK?';ui.status.style.color='';varClearOverlay();ui.eventBanner.classList.remove('visible');ui.eventBanner.style.removeProperty('--event-color');ui.eventBanner.style.removeProperty('--event-glow');ui.word.style.fontSize='';ui.word.style.lineHeight='';ui.word.textContent='GOL!';ui.word.style.color='';ui.callKicker.textContent='GOL ANI';ui.callIcon.textContent='⚽';ui.callSub.textContent='';ui.callSub.style.color='';ui.play.innerHTML='⏸ &nbsp; DURAKLAT';renderCards();renderGoals();syncUI();}
   const cardEls=[{yellow:$('y0'),red:$('r0')},{yellow:$('y1'),red:$('r1')}];
   function renderCards(pop){
     [0,1].forEach(i=>['yellow','red'].forEach(k=>{
@@ -817,7 +825,7 @@
     ui.status.textContent='SIRADAKİ GOL KİMİN?';ui.status.style.color='';
     goalCooldown=Math.max(goalCooldown,.55);
     nextEventAt=Math.max(nextEventAt,elapsed+1.2);
-    balls=[makeBall(0),makeBall(1)];
+    balls=makeBallPair();
   }
   // Logo fileye girince kale eksenli koordinatta yumuşak şekilde sekerek VAR kararı gelene kadar içeride kalır.
   function netPhysics(b,dt){
@@ -842,15 +850,43 @@
   function whistle(blasts){const ac=audio();if(!ac)return;blasts=blasts||1;const dur=blasts>1?0.55:0.4;for(let i=0;i<blasts;i++){const t0=ac.currentTime+0.06+i*(dur+0.15);const o=ac.createOscillator(),g=ac.createGain(),lfo=ac.createOscillator(),lg=ac.createGain();o.type='triangle';o.frequency.setValueAtTime(2350,t0);o.frequency.linearRampToValueAtTime(2550,t0+dur*0.5);o.frequency.linearRampToValueAtTime(2350,t0+dur);lfo.type='sine';lfo.frequency.value=27;lg.gain.value=110;lfo.connect(lg);lg.connect(o.frequency);g.gain.setValueAtTime(0.0001,t0);g.gain.exponentialRampToValueAtTime(0.25,t0+0.035);g.gain.setValueAtTime(0.25,t0+dur-0.07);g.gain.exponentialRampToValueAtTime(0.0001,t0+dur);o.connect(g);g.connect(ac.destination);o.start(t0);o.stop(t0+dur+0.05);lfo.start(t0);lfo.stop(t0+dur+0.05);}}
   document.addEventListener('pointerdown',()=>audio());
   /* ---------- FİZİK: kütle (alan ∝ r²), esneklik katsayısı, Coulomb sürtünmesi, açısal momentum ---------- */
-  const PHYS={eBall:0.94,eWall:0.90,mu:0.22};
+  const PHYS={eBall:0.97,eWall:0.96,mu:0.18,minWallExit:52,cycleSteer:5.2};
   let hitCool=0;
   function wallBounce(b,nx,ny,vn,r){
-    // Normal bileşen: e ile yansır. Teğet: duvar sürtünmesi kayan noktayı yavaşlatır → logo dönmeye başlar (disk: I=½mr²)
+    // Normal bileşen esnek biçimde yansır; asgari içe çıkış hızı logonun çembere yapışmasını kesin olarak engeller.
     const tx=-ny,ty=nx,slip=b.vx*tx+b.vy*ty+b.spin*r;
     let dvt=-slip/3;const lim=PHYS.mu*(1+PHYS.eWall)*vn;dvt=Math.max(-lim,Math.min(lim,dvt));
     b.vx-=(1+PHYS.eWall)*vn*nx;b.vy-=(1+PHYS.eWall)*vn*ny;
     b.vx+=dvt*tx;b.vy+=dvt*ty;b.spin+=2*dvt/r;
+    const minExit=PHYS.minWallExit*spdMul(),after=b.vx*nx+b.vy*ny;
+    if(after>-minExit){b.vx-=nx*(after+minExit);b.vy-=ny*(after+minExit);}
+    b.seekWall=false; // Bu logo duvardan sekti; iki logo da sekince yeniden birbirlerini ararlar.
     if(vn>170*spdMul()&&Math.random()<.5)burst(b.x,b.y,teamColor(b.id),3);
+  }
+  function enforceBounceCycle(dt,sm){
+    if(balls.length!==2)return;
+    const a=balls[0],b=balls[1];if(a.inNet>0||b.inNet>0)return;
+    const alpha=Math.min(1,PHYS.cycleSteer*sm*dt);
+    // Logo-logo çarpışmasından sonra her logo önce çembere yönelir.
+    if(a.seekWall||b.seekWall){
+      for(const q of balls){
+        if(!q.seekWall)continue;
+        let dx=q.x-CX,dy=q.y-CY,d=Math.hypot(dx,dy)||1,nx=dx/d,ny=dy/d;
+        const radial=q.vx*nx+q.vy*ny,target=72*sm;
+        if(radial<target){const push=(target-radial)*alpha;q.vx+=nx*push;q.vy+=ny*push;}
+      }
+      return;
+    }
+    // İkisi de çemberden sekince göreli hızlarını birbirlerine çevir; temasın kendisini impulse çözer.
+    let dx=b.x-a.x,dy=b.y-a.y,d=Math.hypot(dx,dy)||1;
+    const nx=dx/d,ny=dy/d,tx=-ny,ty=nx,ra=ballR(a.id),rb=ballR(b.id),gap=Math.max(0,d-ra-rb);
+    if(gap<3)return;
+    const relN=(b.vx-a.vx)*nx+(b.vy-a.vy)*ny;
+    const desired=-Math.min(128*sm,(58+gap*0.52)*sm);
+    if(relN>desired){const q=(relN-desired)*alpha*.5;a.vx+=nx*q;a.vy+=ny*q;b.vx-=nx*q;b.vy-=ny*q;}
+    // Yan yana kaçıp çarpışmayı ıskalamalarını önlemek için göreli teğet hız yalnızca kısmen sönümlenir.
+    const relT=(b.vx-a.vx)*tx+(b.vy-a.vy)*ty,qT=relT*alpha*.18;
+    a.vx+=tx*qT;a.vy+=ty*qT;b.vx-=tx*qT;b.vy-=ty*qT;
   }
   function collideBalls(sm){
     if(balls.length!==2)return;
@@ -875,6 +911,8 @@
     a.spin+=2*jt*ia/ra;b.spin+=2*jt*ib/rb;
     // Görsel/ses: darbe şiddetine göre
     const impact=-vrel,px=a.x+nx*ra,py=a.y+ny*ra;
+    // Her logo-logo sekmesinden sonra bir sonraki zorunlu durak çemberdir.
+    a.seekWall=true;b.seekWall=true;
     if(hitCool<=0){
       hitCool=0.08;
       burst(px,py,'#e7fff0',Math.min(12,3+Math.round(impact/(40*sm))));
@@ -914,6 +952,7 @@
     const steps=Math.min(14,Math.max(1,Math.ceil(vMaxNow*dt/5))),outerDt=dt;
     for(let st=0;st<steps&&!scored;st++){
     const dt=outerDt/steps;
+    enforceBounceCycle(dt,sm);
     for(const b of balls){
       // Fileye giren logo 0.5 sn içeride kalsın, sonra oyun devam etsin.
       if(b.inNet>0){
@@ -951,16 +990,20 @@
           continue;
         }else{
           let nx=dx/d,ny=dy/d;
-          b.x=CX+nx*(R-r);b.y=CY+ny*(R-r);
+          // Sınırın biraz içine yerleştir: kayan nokta hataları ve tekrar tekrar temas algısı oluşmasın.
+          b.x=CX+nx*(R-r-0.9);b.y=CY+ny*(R-r-0.9);
           let dot=b.vx*nx+b.vy*ny;
           if(dot>0){wallBounce(b,nx,ny,dot,r);}
+          else if(dot>-PHYS.minWallExit*sm){
+            const kick=dot+PHYS.minWallExit*sm;b.vx-=nx*kick;b.vy-=ny*kick;b.seekWall=false;
+          }
         }
       }
     }
     if(!scored)collideBalls(sm);
     }
     for(const b of balls){if(b.inNet<=0){b.trail.push({x:b.x,y:b.y});if(b.trail.length>11)b.trail.shift();}}
-    if(scored)balls=[makeBall(0),makeBall(1)];
+    if(scored)balls=makeBallPair();
     hitCool=Math.max(0,hitCool-outerDt);
     particles=particles.filter(p=>p.life>0);for(const p of particles){p.x+=p.vx*dt;p.y+=p.vy*dt;p.vy+=75*dt;p.life-=dt;}
     if(elapsed>=DUR()){finished=true;whistle(2);if(scores[0]!==scores[1]){const w=scores[0]>scores[1]?0:1;crowdBoost[w]=2.0;punchChant(w,'chant');}else{crowdBoost[0]=0.85;crowdBoost[1]=0.85;}goalFlash=0;eventFlash=0;varState=null;varClearOverlay();ui.eventBanner.classList.remove('visible');ui.eventBanner.style.removeProperty('--event-color');ui.eventBanner.style.removeProperty('--event-glow');ui.status.style.color='';ui.status.textContent=scores[0]===scores[1]?'BERABERE!':'KAZANAN: '+teamName(scores[0]>scores[1]?0:1)+'!';showWhistleCard('MAÇ SONU',scoreLine()+' · '+(scores[0]===scores[1]?'BERABERE':'KAZANAN: '+teamName(scores[0]>scores[1]?0:1)),'FİNAL DÜDÜĞÜ');ui.play.innerHTML='▶ &nbsp; TEKRAR OYNA';}
