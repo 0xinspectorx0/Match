@@ -850,7 +850,7 @@
   function whistle(blasts){const ac=audio();if(!ac)return;blasts=blasts||1;const dur=blasts>1?0.55:0.4;for(let i=0;i<blasts;i++){const t0=ac.currentTime+0.06+i*(dur+0.15);const o=ac.createOscillator(),g=ac.createGain(),lfo=ac.createOscillator(),lg=ac.createGain();o.type='triangle';o.frequency.setValueAtTime(2350,t0);o.frequency.linearRampToValueAtTime(2550,t0+dur*0.5);o.frequency.linearRampToValueAtTime(2350,t0+dur);lfo.type='sine';lfo.frequency.value=27;lg.gain.value=110;lfo.connect(lg);lg.connect(o.frequency);g.gain.setValueAtTime(0.0001,t0);g.gain.exponentialRampToValueAtTime(0.25,t0+0.035);g.gain.setValueAtTime(0.25,t0+dur-0.07);g.gain.exponentialRampToValueAtTime(0.0001,t0+dur);o.connect(g);g.connect(ac.destination);o.start(t0);o.stop(t0+dur+0.05);lfo.start(t0);lfo.stop(t0+dur+0.05);}}
   document.addEventListener('pointerdown',()=>audio());
   /* ---------- FİZİK: kütle (alan ∝ r²), esneklik katsayısı, Coulomb sürtünmesi, açısal momentum ---------- */
-  const PHYS={eBall:0.97,eWall:0.96,mu:0.18,minWallExit:52,cycleSteer:5.2};
+  const PHYS={eBall:1.0,eWall:0.96,mu:0.18,minWallExit:52,cycleSteer:8.5};
   let hitCool=0;
   function wallBounce(b,nx,ny,vn,r){
     // Normal bileşen esnek biçimde yansır; asgari içe çıkış hızı logonun çembere yapışmasını kesin olarak engeller.
@@ -872,7 +872,7 @@
       for(const q of balls){
         if(!q.seekWall)continue;
         let dx=q.x-CX,dy=q.y-CY,d=Math.hypot(dx,dy)||1,nx=dx/d,ny=dy/d;
-        const radial=q.vx*nx+q.vy*ny,target=72*sm;
+        const radial=q.vx*nx+q.vy*ny,target=130*sm;
         if(radial<target){const push=(target-radial)*alpha;q.vx+=nx*push;q.vy+=ny*push;}
       }
       return;
@@ -901,14 +901,20 @@
     a.x-=nx*ca;a.y-=ny*ca;b.x+=nx*cb;b.y+=ny*cb;
     const vrel=(b.vx-a.vx)*nx+(b.vy-a.vy)*ny;
     if(vrel>=0)return; // zaten ayrılıyorlar
-    // Normal itme: j = -(1+e)·v_rel / (1/ma + 1/mb)  → momentum korunur
-    const j=-(1+PHYS.eBall)*vrel/(ia+ib);
+    // Normal itme: j = -(1+e)·v_rel / (1/ma + 1/mb)  → momentum korunur; e her çarpışmada rastgele sertleşir
+    const e=Math.min(1.06,PHYS.eBall+rand(-0.03,0.06));
+    const j=-(1+e)*vrel/(ia+ib);
     a.vx-=j*ia*nx;a.vy-=j*ia*ny;b.vx+=j*ib*nx;b.vy+=j*ib*ny;
     // Teğet sürtünme itmesi: temas noktalarının kayma hızı → spin aktarımı (|jt| ≤ μ·j)
     const slip=(b.vx*tx+b.vy*ty-b.spin*rb)-(a.vx*tx+a.vy*ty+a.spin*ra);
     let jt=slip/(3*(ia+ib));jt=Math.max(-PHYS.mu*j,Math.min(PHYS.mu*j,jt));
     a.vx+=jt*ia*tx;a.vy+=jt*ia*ty;b.vx-=jt*ib*tx;b.vy-=jt*ib*ty;
     a.spin+=2*jt*ia/ra;b.spin+=2*jt*ib/rb;
+    // Rastgele sert darbe: çarpışma anında rastgele yönde ekstra itme (a'ya +k, b'ye -k → toplam momentum korunur)
+    const ka=rand(0,TAU),kick=rand(60,150)*sm;
+    a.vx+=Math.cos(ka)*kick;a.vy+=Math.sin(ka)*kick;
+    b.vx-=Math.cos(ka)*kick;b.vy-=Math.sin(ka)*kick;
+    a.spin+=rand(-2.5,2.5)*sm;b.spin+=rand(-2.5,2.5)*sm;
     // Görsel/ses: darbe şiddetine göre
     const impact=-vrel,px=a.x+nx*ra,py=a.y+ny*ra;
     // Her logo-logo sekmesinden sonra bir sonraki zorunlu durak çemberdir.
