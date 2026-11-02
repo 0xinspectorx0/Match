@@ -415,7 +415,9 @@
   const W=400,H=711,CX=200,CY=398,R=147,BR=17,NET=36,HALF_GAP=0.36;
   const ballR=id=>BR*(settings.teams[id].scale||1);
   // Kale geometrisi (kale yerel koordinatlarında: x = merkezden dışa, y = teğet yön)
-  const GW=R*Math.sin(HALF_GAP), PX=R-6, BX=R+NET, POST=7;
+  // PX, direk merkezinin ±GW'de çemberle tam kesiştiği noktadır. Böylece boşluk yoktur;
+  // içeri taşabilecek ince direk kısmı saha diskinin mevcut kırpması tarafından görünmez kılınır.
+  const GW=R*Math.sin(HALF_GAP), PX=R*Math.cos(HALF_GAP), BX=R+NET, POST=7;
   // Tek parça U çerçeve: iki dikdörtgen direk + direklerin ucuna tam oturan üst direk (çıkıntı yok).
   function framePath(){ctx.beginPath();ctx.moveTo(PX,-GW-POST/2);ctx.lineTo(BX,-GW-POST/2);ctx.lineTo(BX,GW+POST/2);ctx.lineTo(PX,GW+POST/2);ctx.lineTo(PX,GW-POST/2);ctx.lineTo(BX-POST,GW-POST/2);ctx.lineTo(BX-POST,-GW+POST/2);ctx.lineTo(PX,-GW+POST/2);ctx.closePath();}
   let balls=[],particles=[],elapsed=0,paused=false,finished=false,goalFlash=0,eventFlash=0,last=0,shake=0,goalCooldown=0,scores=[0,0],matchGoalCap=0;
