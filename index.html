@@ -933,6 +933,22 @@
     g.gain.setValueAtTime(0.0001,t0);g.gain.exponentialRampToValueAtTime(0.05+0.16*power,t0+0.008);g.gain.exponentialRampToValueAtTime(0.0001,t0+0.15);
     o.connect(g);g.connect(ac.destination);o.start(t0);o.stop(t0+0.17);
   }
+  /* =========================================================
+     GOL KURALLARI (uygulama sırası ile)
+     1. Top çember çizgisine değince (d >= R - r) temas kontrolü başlar.
+     2. Kale ağzı koordinatı hesaplanır: |ly| <= GW + r*0.9 ise top kale ağzının içindedir.
+     3. Top dışa doğru gidiyorsa ve VAR sür請miyorsa → gol adayıdır.
+     4. Gol sayılabilmesi için tüm şartlar: VAR yok, goalCooldown=0, maç bitişine 1.6 sn'den fazla var,
+        takım skoru < MAX_GOALS (6), toplam gol < maç gol hedefi (matchGoalCap, ağırlıklı: 0-3 %70, 2-3 %15, 3-4 %10, 4-6 %5).
+     5. Gol adayı rastgele: %40 VAR incelemesine girer (logo filede bekler), %60 direkt gol olur.
+     6. VAR: önce 'check' incelemesi, sonra 'verdict' kararı; %66 (VAR.chance) geçerli → gol sayılır,
+        aksi hâlde iptal edilir (sebep: OFSAYT).
+     7. Gol sayılınca: skor +1, gol loguna dakika yazılır, ortada GOL! kartı + tribün kutlaması çıkar;
+        golü atan logo 0.5 sn filede (inNet) kalır.
+     8. File süresi bitince (VAR yoksa) iki top ortaya yeniden spawn olur.
+     9. Ağzın dışı temaslarda top çemberden sekir (wallBounce); en az minWallExit hızla içe döner,
+        çembere asla yapışmaz.
+     ========================================================= */
   function update(dt){
     if(paused||finished)return;
     const hd=DUR()/2,wasHalf=elapsed>=hd?1:0;
