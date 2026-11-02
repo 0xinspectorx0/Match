@@ -227,6 +227,10 @@
   .card-note { font-size:10px; color:#8fb3a6; line-height:1.4; }
   .admin-foot { padding:12px 18px calc(12px + env(safe-area-inset-bottom)); border-top:1px solid #a5d7c322; background:#06161a; }
   .foot-row { display:grid; grid-template-columns:1fr auto; gap:8px; }
+  .rec-preview { position:fixed; z-index:60; left:50%; bottom:18px; transform:translateX(-50%); width:min(340px,92vw); background:#0a2422f2; border:1px solid #00ffd566; border-radius:12px; padding:10px; box-shadow:0 12px 40px #000c, 0 0 22px rgba(0,255,213,.18); }
+  .rec-preview video { width:100%; border-radius:8px; background:#04110f; display:block; }
+  .rec-actions { display:flex; gap:8px; margin-top:9px; align-items:center; justify-content:center; }
+  .rec-actions a { display:inline-block; padding:9px 12px; border-radius:8px; text-decoration:none; font:850 11px/1 inherit; letter-spacing:.1em; }
   .admin-foot button { height:42px; border-radius:8px; font:850 10px/1 inherit; letter-spacing:.14em; cursor:pointer; border:1px solid #a0dbbd55; transition:background .2s, transform .2s; }
   .btn-primary { background:#b8e7cd; color:#0b2927; }
   .btn-primary:hover { background:#d9ffe8; transform:translateY(-1px); }
@@ -259,6 +263,12 @@
   <div class="bottom"><div class="controls"><button id="playBtn" type="button">⏸ &nbsp; DURAKLAT</button><button id="resetBtn" type="button" class="secondary">↻ &nbsp; YENİDEN</button><button id="recBtn" type="button" class="secondary">⏺ &nbsp; KAYIT</button></div></div>
   <div class="fuse-wrap" id="fuseWrap" aria-hidden="true"><div class="fuse-track"><div class="fuse-bar" id="progress"><div class="neon-tip" id="fuseSpark"><span class="neon-point"></span><span class="neon-halo"></span></div></div></div></div>
 </main>
+
+<!-- Kayıt önizleme: sahnenin dışında, kayda girmez -->
+<div class="rec-preview" id="recPreview" hidden>
+  <video id="recVideo" controls playsinline></video>
+  <div class="rec-actions"><a id="recDl" class="btn-primary" download>⬇ &nbsp; VİDEOYU İNDİR (.webm)</a><button type="button" class="btn-ghost" id="recClose">✕ &nbsp; KAPAT</button></div>
+</div>
 
 <!-- Yönetim paneli: sahnenin dışında, kayda girmez -->
 <button class="admin-toggle" id="adminToggle" type="button" aria-controls="adminPanel" aria-expanded="false"><span class="gear">⚙</span> YÖNETİM</button>
@@ -1340,12 +1350,13 @@
       let mime='video/webm;codecs=vp9';if(!MediaRecorder.isTypeSupported(mime))mime='video/webm;codecs=vp8';if(!MediaRecorder.isTypeSupported(mime))mime='';
       recorder=new MediaRecorder(stream,mime?{mimeType:mime}:undefined);
       recorder.ondataavailable=e=>{if(e.data&&e.data.size)recChunks.push(e.data);};
-      recorder.onstop=()=>{recording=false;ui.rec.innerHTML='⏺ &nbsp; KAYIT';const blob=new Blob(recChunks,{type:'video/webm'});if(!blob.size){ui.status.textContent='Kayıt boş — video üretilemedi.';return;}const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download='logo-arena-'+new Date().toISOString().replace(/[:.]/g,'-')+'.webm';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),5000);if(!finished)ui.status.textContent='Video kaydedildi: '+a.download;};
+      recorder.onstop=()=>{recording=false;ui.rec.innerHTML='⏺ &nbsp; KAYIT';const blob=new Blob(recChunks,{type:'video/webm'});if(!blob.size){ui.status.textContent='Kayıt boş — video üretilemedi.';return;}const url=URL.createObjectURL(blob);const fname='logo-arena-'+new Date().toISOString().replace(/[:.]/g,'-')+'.webm';const vid=$('recVideo');vid.src=url;$('recDl').href=url;$('recDl').download=fname;$('recPreview').hidden=false;const a=document.createElement('a');a.href=url;a.download=fname;document.body.appendChild(a);try{a.click();}catch(e){}a.remove();setTimeout(()=>URL.revokeObjectURL(url),60000);if(!finished)ui.status.textContent='Video hazır: '+fname+' — indirilmediyse aşağıdaki ⬇ VİDEOYU İNDİR bağlantısını kullan.';};
       recorder.start(250);recording=true;ui.rec.innerHTML='⏹ &nbsp; KAYDI DURDUR';ui.status.textContent='⏺ Video kaydediliyor — durdurmak için KAYDI DURDUR’a basın.';
     }catch(err){recording=false;ui.status.textContent='Kayıt başlatılamadı: '+err.message;}
   }
   function stopRec(){if(recorder&&recorder.state!=='inactive'){try{recorder.stop();}catch(e){recording=false;ui.rec.innerHTML='⏺ &nbsp; KAYIT';}}else{recording=false;ui.rec.innerHTML='⏺ &nbsp; KAYIT';}}
   ui.rec.addEventListener('click',()=>{recording?stopRec():startRec();});
+  $('recClose').addEventListener('click',()=>{$('recPreview').hidden=true;const v=$('recVideo');v.pause();v.removeAttribute('src');v.load();});
 
   /* ---------- Başlat ---------- */
   loadImage(0);loadImage(1);refreshAll();applyLive();closePanel();reset();
