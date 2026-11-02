@@ -863,7 +863,7 @@
     b.seekWall=false; // Bu logo duvardan sekti; iki logo da sekince yeniden birbirlerini ararlar.
     if(vn>170*spdMul()&&Math.random()<.5)burst(b.x,b.y,teamColor(b.id),3);
   }
-  function enforceBounceCycle(dt,sm){
+  function enforceBounceCycle(dt,sm,goalOpen){
     if(balls.length!==2)return;
     const a=balls[0],b=balls[1];if(a.inNet>0||b.inNet>0)return;
     const alpha=Math.min(1,PHYS.cycleSteer*sm*dt);
@@ -871,7 +871,10 @@
     if(a.seekWall||b.seekWall){
       for(const q of balls){
         if(!q.seekWall)continue;
-        let dx=q.x-CX,dy=q.y-CY,d=Math.hypot(dx,dy)||1,nx=dx/d,ny=dy/d;
+        let dx=q.x-CX,dy=q.y-CY,d=Math.hypot(dx,dy)||1,ang=Math.atan2(dy,dx);
+        // Gol modu kapalıysa kale ağzına asla yönelme: hedef duvar açısını ağzın dışına kaydır.
+        if(!goalOpen){const diff=norm(ang-goalAngle);if(Math.abs(diff)<HALF_GAP+0.5)ang=goalAngle+Math.sign(diff||(q.id?-1:1))*(HALF_GAP+0.5);}
+        const nx=Math.cos(ang),ny=Math.sin(ang);
         const radial=q.vx*nx+q.vy*ny,target=130*sm;
         if(radial<target){const push=(target-radial)*alpha;q.vx+=nx*push;q.vy+=ny*push;}
       }
@@ -956,6 +959,8 @@
     if(elapsed>=hd&&wasHalf===0){whistle(1);crowdBoost[0]=Math.max(crowdBoost[0],1.0);crowdBoost[1]=Math.max(crowdBoost[1],1.0);ui.status.textContent='İLK YARI BİTTİ — İKİNCİ YARI BAŞLIYOR!';ui.status.style.color='';if(!varState){showWhistleCard('İLK YARI BİTTİ',scoreLine(),'DEVRE ARASI','İLK YARI<br>BİTTİ');goalFlash=2.2;}}
     goalCooldown=Math.max(0,goalCooldown-dt);goalFlash=Math.max(0,goalFlash-dt);eventFlash=Math.max(0,eventFlash-dt);shake=Math.max(0,shake-dt*35);
     const sm=spdMul();
+    // Gol modu açık mı? (kota/VAR/cooldown/son saniye) — kapalıyken toplar kaleye YAKLAŞMAZ.
+    const goalOpen=!varState&&goalCooldown<=0&&elapsed<DUR()-1.6&&scores[0]+scores[1]<matchGoalCap;
     // Kale çemberin çizgisi üzerinde dönsün; hız kademeye göre ölçeklenir
     goalAngle+=(0.42+0.20*Math.sin(elapsed*0.35))*sm*dt;
     if(!varState&&goalFlash===0&&ui.overlay.classList.contains('visible')){ui.overlay.classList.remove('visible');ui.overlay.style.removeProperty('--call-glow');if(eventFlash>0){ui.status.textContent=eventStatus;ui.status.style.color=eventColor;}else{ui.status.textContent='SIRADAKİ GOL KİMİN?';ui.status.style.color='';}}
@@ -974,7 +979,7 @@
     const steps=Math.min(14,Math.max(1,Math.ceil(vMaxNow*dt/5))),outerDt=dt;
     for(let st=0;st<steps&&!scored;st++){
     const dt=outerDt/steps;
-    enforceBounceCycle(dt,sm);
+    enforceBounceCycle(dt,sm,goalOpen);
     for(const b of balls){
       // Fileye giren logo 0.5 sn içeride kalsın, sonra oyun devam etsin.
       if(b.inNet>0){
@@ -986,9 +991,10 @@
       // Her logoya küçük rastgele yön değişimi.
       let turn=rand(-1,1)*1.8*sm*dt,cs=Math.cos(turn),sn=Math.sin(turn),vx=b.vx;
       b.vx=vx*cs-b.vy*sn;b.vy=vx*sn+b.vy*cs;
-      // Hareket halindeki kaleye çok hafif çekim — kısa videoda olay olsun.
+      // Gol açıksa kaleye çekim; kapalıysa kale ağzından kuvvetle uzaklaş — top kaleye hiç gitmez.
       let m=goalMouth();
-      b.vx+=(m.x-b.x)*0.62*sm*dt;b.vy+=(m.y-b.y)*0.62*sm*dt;
+      if(goalOpen){b.vx+=(m.x-b.x)*0.62*sm*dt;b.vy+=(m.y-b.y)*0.62*sm*dt;}
+      else{b.vx-=(m.x-b.x)*0.55*sm*dt;b.vy-=(m.y-b.y)*0.55*sm*dt;}
       // Hız düzenleme YUMUŞAK: çarpışmadan gelen ekstra hız sürtünmeyle yavaş söner, yavaşlayan logo kendi "motoru" ile toparlanır
       let speed=Math.hypot(b.vx,b.vy)||1;
       let maxSpd=150*sm,minSpd=95*sm;
