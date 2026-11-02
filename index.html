@@ -802,7 +802,8 @@
     v.phase='verdict';v.t=0;
     ui.overlay.classList.add('var-done');
     ui.callKicker.textContent='VAR KARARI';
-    if(v.valid){
+    const canScore=scores[id]<MAX_GOALS&&scores[0]+scores[1]<matchGoalCap;
+    if(v.valid&&canScore){
       ui.overlay.classList.add('var-valid');
       ui.callIcon.textContent='✅';
       ui.word.style.fontSize='';ui.word.style.lineHeight='';ui.word.textContent='GOL!';ui.word.style.color=col;
@@ -815,8 +816,8 @@
       ui.overlay.classList.add('var-cancel');
       ui.callIcon.textContent='❌';
       ui.word.style.fontSize='';ui.word.style.lineHeight='';ui.word.textContent='İPTAL!';ui.word.style.color='#ff6a7b';
-      ui.callSub.textContent=v.reason+' · GOL SAYILMADI';ui.callSub.style.color='#ffb9c2';
-      ui.status.textContent='VAR · GOL İPTAL: '+v.reason;ui.status.style.color='#ff8b97';
+      const why=(v.valid&&!canScore)?'GOL KOTASI DOLU':v.reason;ui.callSub.textContent=why+' · GOL SAYILMADI';ui.callSub.style.color='#ffb9c2';
+      ui.status.textContent='VAR · GOL İPTAL: '+why;ui.status.style.color='#ff8b97';
       shake=7;const m=goalMouth();burst(m.x,m.y,'#ff6a7b',18);
     }
   }
@@ -945,11 +946,9 @@
      1. Top çember çizgisine değince (d >= R - r) temas kontrolü başlar.
      2. Kale ağzı koordinatı hesaplanır: |ly| <= GW + r*0.9 ise top kale ağzının içindedir.
      3. Top dışa doğru gidiyorsa ve VAR sür請miyorsa → gol adayıdır.
-     4. Gol sayılabilmesi için tüm şartlar: VAR yok, goalCooldown=0, maç bitişine 1.6 sn'den fazla var,
-        takım skoru < MAX_GOALS (6), toplam gol < maç gol hedefi (matchGoalCap, ağırlıklı: 0-3 %70, 2-3 %15, 3-4 %10, 4-6 %5).
-     5. Gol adayı rastgele: %40 VAR incelemesine girer (logo filede bekler), %60 direkt gol olur.
-     6. VAR: önce 'check' incelemesi, sonra 'verdict' kararı; %66 (VAR.chance) geçerli → gol sayılır,
-        aksi hâlde iptal edilir (sebep: OFSAYT).
+     4. Ağıza temas (|ly| <= GW + r*0.9): top ASLA SEKMEZ — her temas gol adayıdır ve VAR'a girer.
+     5. VAR: önce 'check' incelemesi, sonra 'verdict' kararı; %66 (VAR.chance) geçerli → gol sayılır,
+        aksi hâlde iptal edilir (sebep: OFSAYT). Kota dolduysa (takım MAX_GOALS=6 veya matchGoalCap) geçerli gol bile iptal edilir.
      7. Gol sayılınca: skor +1, gol loguna dakika yazılır, ortada GOL! kartı + tribün kutlaması çıkar;
         golü atan logo 0.5 sn filede (inNet) kalır.
      8. File süresi bitince (VAR yoksa) iki top ortaya yeniden spawn olur.
@@ -1015,8 +1014,8 @@
         let ca=Math.cos(goalAngle),sa=Math.sin(goalAngle);
         let ly=-dx*sa+dy*ca; // kale ağzı koordinatı (teğet yön): direkler arası temas her zaman gol
         let inMouth=Math.abs(ly)<=GW+r*0.9;
-        if(!varState&&inMouth&&goalCooldown<=0&&elapsed<DUR()-1.6&&scores[b.id]<MAX_GOALS&&scores[0]+scores[1]<matchGoalCap){
-          // AĞIZA GELEN TOP SEKMEZ: daima gol adayıdır ve her zaman VAR'da değerlendirilir.
+        if(!varState&&inMouth){
+          // AĞIZA GELEN TOP ASLA SEKMEZ: her temas gol adayıdır, VAR'da değerlendirilir, mutlaka sonuç çıkar.
           startVAR(b);
           continue;
         }else{
