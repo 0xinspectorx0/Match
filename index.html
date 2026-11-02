@@ -1249,6 +1249,7 @@
 
   /* ---------- Başlat ---------- */
   loadImage(0);loadImage(1);refreshAll();applyLive();closePanel();reset();
+  paused=true;ui.play.innerHTML='▶ &nbsp; BAŞLAT';ui.status.textContent='Maça başlamak için ▶ BAŞLAT düğmesine basın.'; // kullanıcı başlatmadan oyun başlamaz
   const dpr=Math.min(window.devicePixelRatio||1,3);canvas.width=W*dpr;canvas.height=H*dpr;ctx.scale(dpr,dpr);requestAnimationFrame(frame);
 })();
 </script>
