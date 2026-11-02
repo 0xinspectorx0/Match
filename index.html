@@ -256,7 +256,7 @@
   <div class="midline" aria-live="polite"><div class="status" id="status">İLK GOLÜ KİM ATACAK?</div></div>
   <div class="event-banner" id="eventBanner" aria-live="polite"><span class="event-icon" id="eventIcon" aria-hidden="true">⚽</span><div class="event-copy"><span class="event-kicker" id="eventKicker">MAÇ ANI</span><strong class="event-word" id="eventWord">PENALTI!</strong><span class="event-sub" id="eventSub"></span></div></div>
   <div class="goal-overlay" id="goalOverlay"><span class="var-frame" aria-hidden="true"></span><div class="call-card"><span class="var-strip"><i></i>VAR · OFSAYT KONTROLÜ</span><span class="call-kicker" id="callKicker">GOL ANI</span><span class="call-icon" id="callIcon" aria-hidden="true">⚽</span><span class="goal-word" id="goalWord">GOL!</span><span class="call-sub" id="callSub"></span><span class="var-steps" aria-hidden="true"><i></i><i></i><i></i></span></div></div>
-  <div class="bottom"><div class="controls"><button id="playBtn" type="button">⏸ &nbsp; DURAKLAT</button><button id="resetBtn" type="button" class="secondary">↻ &nbsp; YENİDEN</button></div></div>
+  <div class="bottom"><div class="controls"><button id="playBtn" type="button">⏸ &nbsp; DURAKLAT</button><button id="resetBtn" type="button" class="secondary">↻ &nbsp; YENİDEN</button><button id="recBtn" type="button" class="secondary">⏺ &nbsp; KAYIT</button></div></div>
   <div class="fuse-wrap" id="fuseWrap" aria-hidden="true"><div class="fuse-track"><div class="fuse-bar" id="progress"><div class="neon-tip" id="fuseSpark"><span class="neon-point"></span><span class="neon-halo"></span></div></div></div></div>
 </main>
 
@@ -411,7 +411,7 @@
      SAHNE / OYUN
      ========================================================= */
   const canvas=$('game'), ctx=canvas.getContext('2d');
-  const ui={timer:$('timer'),timerLabel:$('timerLabel'),scores:[$('score0'),$('score1')],names:[$('name0'),$('name1')],badges:[$('badge0'),$('badge1')],status:$('status'),overlay:$('goalOverlay'),word:$('goalWord'),callKicker:$('callKicker'),callIcon:$('callIcon'),callSub:$('callSub'),eventBanner:$('eventBanner'),eventIcon:$('eventIcon'),eventKicker:$('eventKicker'),eventWord:$('eventWord'),eventSub:$('eventSub'),progress:$('progress'),fuseSpark:$('fuseSpark'),play:$('playBtn'),reset:$('resetBtn')};
+  const ui={timer:$('timer'),timerLabel:$('timerLabel'),scores:[$('score0'),$('score1')],names:[$('name0'),$('name1')],badges:[$('badge0'),$('badge1')],status:$('status'),overlay:$('goalOverlay'),word:$('goalWord'),callKicker:$('callKicker'),callIcon:$('callIcon'),callSub:$('callSub'),eventBanner:$('eventBanner'),eventIcon:$('eventIcon'),eventKicker:$('eventKicker'),eventWord:$('eventWord'),eventSub:$('eventSub'),progress:$('progress'),fuseSpark:$('fuseSpark'),play:$('playBtn'),reset:$('resetBtn'),rec:$('recBtn')};
   const W=400,H=711,CX=200,CY=398,R=147,BR=17,NET=36,HALF_GAP=0.36;
   const ballR=id=>BR*(settings.teams[id].scale||1);
   // Kale geometrisi (kale yerel koordinatlarında: x = merkezden dışa, y = teğet yön)
@@ -1036,7 +1036,7 @@
     if(scored)balls=makeBallPair();
     hitCool=Math.max(0,hitCool-outerDt);
     particles=particles.filter(p=>p.life>0);for(const p of particles){p.x+=p.vx*dt;p.y+=p.vy*dt;p.vy+=75*dt;p.life-=dt;}
-    if(elapsed>=DUR()){finished=true;whistle(2);if(scores[0]!==scores[1]){const w=scores[0]>scores[1]?0:1;crowdBoost[w]=2.0;punchChant(w,'chant');}else{crowdBoost[0]=0.85;crowdBoost[1]=0.85;}goalFlash=0;eventFlash=0;varState=null;varClearOverlay();ui.eventBanner.classList.remove('visible');ui.eventBanner.style.removeProperty('--event-color');ui.eventBanner.style.removeProperty('--event-glow');ui.status.style.color='';ui.status.textContent=scores[0]===scores[1]?'BERABERE!':'KAZANAN: '+teamName(scores[0]>scores[1]?0:1)+'!';showWhistleCard('MAÇ SONU',scoreLine()+' · '+(scores[0]===scores[1]?'BERABERE':'KAZANAN: '+teamName(scores[0]>scores[1]?0:1)),'FİNAL DÜDÜĞÜ');ui.play.innerHTML='▶ &nbsp; TEKRAR OYNA';}
+    if(elapsed>=DUR()){finished=true;if(recording)stopRec();whistle(2);if(scores[0]!==scores[1]){const w=scores[0]>scores[1]?0:1;crowdBoost[w]=2.0;punchChant(w,'chant');}else{crowdBoost[0]=0.85;crowdBoost[1]=0.85;}goalFlash=0;eventFlash=0;varState=null;varClearOverlay();ui.eventBanner.classList.remove('visible');ui.eventBanner.style.removeProperty('--event-color');ui.eventBanner.style.removeProperty('--event-glow');ui.status.style.color='';ui.status.textContent=scores[0]===scores[1]?'BERABERE!':'KAZANAN: '+teamName(scores[0]>scores[1]?0:1)+'!';showWhistleCard('MAÇ SONU',scoreLine()+' · '+(scores[0]===scores[1]?'BERABERE':'KAZANAN: '+teamName(scores[0]>scores[1]?0:1)),'FİNAL DÜDÜĞÜ');ui.play.innerHTML='▶ &nbsp; TEKRAR OYNA';}
   }
   function line(x1,y1,x2,y2,color,width=1){ctx.strokeStyle=color;ctx.lineWidth=width;ctx.beginPath();ctx.moveTo(x1,y1);ctx.lineTo(x2,y2);ctx.stroke();}
   // Top üzerindeki logo: seçilen ikon, baş harf ya da yüklenen görsel. r = top yarıçapı.
@@ -1115,7 +1115,7 @@
     }
     for(const p of particles){ctx.globalAlpha=Math.max(0,p.life/p.max);ctx.fillStyle=p.color;ctx.fillRect(p.x,p.y,p.size,p.size);}ctx.globalAlpha=1;ctx.restore();
   }
-  function frame(ms){if(!last)last=ms;let dt=Math.min((ms-last)/1000,.033);last=ms;update(dt);draw(ms/1000);if(isOpen())drawPreviews(ms/1000);requestAnimationFrame(frame);}
+  function frame(ms){if(!last)last=ms;let dt=Math.min((ms-last)/1000,.033);last=ms;update(dt);draw(ms/1000);if(recording)compositeRec();if(isOpen())drawPreviews(ms/1000);requestAnimationFrame(frame);}
   ui.play.addEventListener('click',()=>{if(finished){reset();return;}paused=!paused;ui.play.innerHTML=paused?'▶ &nbsp; DEVAM ET':'⏸ &nbsp; DURAKLAT';});
   ui.reset.addEventListener('click',reset);
 
@@ -1246,6 +1246,106 @@
     clearTimeout(armed);armed=0;defBtn.textContent='VARSAYILAN';defBtn.classList.remove('armed');
     settings=clone(DEFAULTS);loadImage(0);loadImage(1);refreshAll();applyLive();save();reset();note('Varsayılan ayarlara dönüldü.',true);
   });
+
+  /* ---------- VİDEO KAYDI: oyun canvas'ı + HUD bileşik bir canvas'a çizilir, MediaRecorder ile webm kaydedilir ---------- */
+  let recorder=null,recChunks=[],recording=false,recCanvas=null,rctx=null;
+  const recSupported=()=>typeof MediaRecorder!=='undefined'&&!!canvas.captureStream;
+  function drawHudOn(c){
+    // c: mantıksal 400x711 koordinatlarına ölçeklenmiş 2d bağlamı; HUD metinleri canlı DOM'dan okunur.
+    c.save();
+    const sbX=32,sbY=711*.07,sbW=336,sbH=711*.096;
+    c.strokeStyle='#00ffd5';c.lineWidth=1;c.shadowColor='rgba(0,255,213,.5)';c.shadowBlur=8;
+    c.beginPath();c.moveTo(sbX,sbY);c.lineTo(sbX+sbW,sbY);c.moveTo(sbX,sbY+sbH);c.lineTo(sbX+sbW,sbY+sbH);c.stroke();
+    c.shadowBlur=0;c.strokeStyle='rgba(0,255,213,.35)';
+    c.beginPath();c.moveTo(157,sbY);c.lineTo(157,sbY+sbH);c.moveTo(243,sbY);c.lineTo(243,sbY+sbH);c.stroke();
+    c.textAlign='center';c.textBaseline='middle';
+    c.fillStyle='#b3c8bd';c.font='800 8px Inter, system-ui, sans-serif';c.fillText(ui.timerLabel.textContent,200,sbY+sbH*.32);
+    c.fillStyle='#eefaf3';c.font='950 20px Inter, system-ui, sans-serif';c.fillText(ui.timer.textContent,200,sbY+sbH*.68);
+    for(let i=0;i<2;i++){
+      const col=teamColor(i),bcx=i?275:125,scoreX=i?300:100;
+      c.fillStyle=col;c.font='950 29px Inter, system-ui, sans-serif';c.textAlign=i?'left':'right';c.fillText(ui.scores[i].textContent,scoreX,sbY+sbH*.42);
+      c.textAlign='center';c.beginPath();c.arc(bcx,sbY+sbH*.42,15,0,TAU);c.fillStyle='#112c2c';c.fill();
+      c.strokeStyle=col;c.lineWidth=1;c.shadowColor=col;c.shadowBlur=10;c.stroke();c.shadowBlur=0;
+      const img=logoImgs[i];
+      if(img&&img.complete&&img.naturalWidth){c.save();c.beginPath();c.arc(bcx,sbY+sbH*.42,14,0,TAU);c.clip();c.drawImage(img,bcx-14,sbY+sbH*.42-14,28,28);c.restore();}
+      else{c.fillStyle=col;c.font='950 14px Inter, system-ui, sans-serif';c.fillText(initial(i),bcx,sbY+sbH*.42+1);}
+      c.fillStyle='#e8fff6';c.font='850 9px Inter, system-ui, sans-serif';c.fillText(ui.names[i].textContent,bcx,sbY+sbH*.82);
+    }
+    const cy=711*.172+10;
+    for(let i=0;i<2;i++){
+      const chips=[['#ffe05b',cards[i].yellow],['#ff3b50',cards[i].red]];
+      let x=i?382:18;
+      for(const pair of chips){
+        const col=pair[0],n=pair[1];
+        c.save();c.globalAlpha=n>0?1:.4;c.translate(x+(i?-5:5),cy);c.rotate(-.14);
+        c.fillStyle=col;c.shadowColor=col;c.shadowBlur=n>0?8:0;c.fillRect(-5,-7,10,14);c.restore();
+        c.fillStyle='#e8fff6';c.font='900 12px Inter, system-ui, sans-serif';c.textAlign=i?'right':'left';c.fillText(String(n),x+(i?-14:14),cy+1);
+        x+=i?-34:34;
+      }
+    }
+    const gy=711*.198+7;
+    for(let i=0;i<2;i++){
+      c.font='900 8px Inter, system-ui, sans-serif';c.textAlign=i?'right':'left';
+      let x=i?382:18;const col=teamColor(i);c.strokeStyle=col;c.fillStyle=col;c.globalAlpha=.92;
+      for(const m of goalLog[i]){
+        const w=15;
+        c.strokeRect(i?x-w:x,gy-7,w,13);
+        c.fillText(m+"'",i?x-w/2:x+w/2,gy+1);
+        x+=i?-(w+3):(w+3);
+      }
+      c.globalAlpha=1;
+    }
+    c.textAlign='center';c.font='950 20px Inter, system-ui, sans-serif';
+    c.fillStyle=ui.status.style.color||'#eef5ed';c.shadowColor='rgba(0,255,213,.4)';c.shadowBlur=10;
+    c.fillText(ui.status.textContent,200,711*.224+13);c.shadowBlur=0;
+    if(ui.eventBanner.classList.contains('visible')){
+      const ey=711*.252,col=eventColor||'#ffd166';
+      const word=ui.eventWord.textContent||'';
+      const w=Math.min(352,Math.max(130,word.length*10+86));
+      c.fillStyle='#0d2523ee';c.strokeStyle=col;c.lineWidth=1;c.shadowColor=rgba(col,.35);c.shadowBlur=14;
+      rrPath(c,200-w/2,ey,w,53,8);c.fill();c.stroke();c.shadowBlur=0;
+      c.textAlign='left';c.font='28px system-ui';c.fillStyle='#eef5ed';c.fillText(ui.eventIcon.textContent||'⚽',200-w/2+12,ey+27);
+      c.fillStyle='#a8c7bc';c.font='900 7px Inter, system-ui, sans-serif';c.fillText(ui.eventKicker.textContent,200-w/2+52,ey+12);
+      c.fillStyle=col;c.font='1000 15px Inter, system-ui, sans-serif';c.fillText(word,200-w/2+52,ey+27);
+      c.fillStyle='#e2f1e8';c.font='800 9px Inter, system-ui, sans-serif';c.fillText(ui.eventSub.textContent,200-w/2+52,ey+43);
+    }
+    if(ui.overlay.classList.contains('visible')){
+      c.fillStyle=varState?'rgba(2,10,11,.82)':'rgba(2,10,11,.28)';c.fillRect(0,0,400,711);
+      if(varState){c.fillStyle='rgba(0,255,213,.06)';for(let y=0;y<711;y+=5)c.fillRect(0,y,400,1);}
+      const word=(ui.word.innerHTML||'').replace(/<br\s*\/?>/gi,'\n');
+      c.textAlign='center';c.textBaseline='middle';
+      c.fillStyle='#a8c7bc';c.font='900 11px Inter, system-ui, sans-serif';c.fillText(ui.callKicker.textContent,200,268);
+      c.font='40px system-ui';c.fillStyle='#eef5ed';c.fillText(ui.callIcon.textContent||'⚽',200,312);
+      c.save();c.translate(200,398);c.rotate(-.16);
+      c.fillStyle=ui.word.style.color||'#eef5ed';c.shadowColor=ui.word.style.color||'rgba(0,255,213,.6)';c.shadowBlur=24;
+      c.font='950 58px Inter, system-ui, sans-serif';
+      const lines=word.split('\n'),lh=54;
+      lines.forEach((ln,k)=>c.fillText(ln,0,lines.length>1?k*lh-lh/2:0));
+      c.restore();c.shadowBlur=0;
+      c.fillStyle='#eaf8ee';c.font='800 12px Inter, system-ui, sans-serif';c.fillText(ui.callSub.textContent,200,470);
+    }
+    const pct=Math.max(0,Math.min(1,(DUR()-elapsed)/DUR()));
+    c.fillStyle='rgba(6,26,27,.9)';c.fillRect(0,705,400,6);
+    const grd=c.createLinearGradient(0,0,400,0);grd.addColorStop(0,'#00ffd5');grd.addColorStop(1,'#b8fff0');
+    c.fillStyle=grd;c.shadowColor='#00ffd5';c.shadowBlur=8;c.fillRect(0,705,400*pct,6);c.shadowBlur=0;
+    c.fillStyle='#eafffb';c.beginPath();c.arc(Math.max(3,400*pct),708,3,0,TAU);c.fill();
+    c.restore();
+  }
+  function compositeRec(){if(!recording||!rctx)return;rctx.setTransform(1,0,0,1,0,0);rctx.drawImage(canvas,0,0,recCanvas.width,recCanvas.height);rctx.setTransform(2,0,0,2,0,0);drawHudOn(rctx);}
+  function startRec(){
+    if(!recSupported()){ui.status.textContent='Bu tarayıcı video kaydını desteklemiyor.';return;}
+    try{
+      recChunks=[];recCanvas=document.createElement('canvas');recCanvas.width=800;recCanvas.height=1422;rctx=recCanvas.getContext('2d');
+      const stream=recCanvas.captureStream(60);
+      let mime='video/webm;codecs=vp9';if(!MediaRecorder.isTypeSupported(mime))mime='video/webm;codecs=vp8';if(!MediaRecorder.isTypeSupported(mime))mime='';
+      recorder=new MediaRecorder(stream,mime?{mimeType:mime}:undefined);
+      recorder.ondataavailable=e=>{if(e.data&&e.data.size)recChunks.push(e.data);};
+      recorder.onstop=()=>{recording=false;ui.rec.innerHTML='⏺ &nbsp; KAYIT';const blob=new Blob(recChunks,{type:'video/webm'});if(!blob.size){ui.status.textContent='Kayıt boş — video üretilemedi.';return;}const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download='logo-arena-'+new Date().toISOString().replace(/[:.]/g,'-')+'.webm';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),5000);if(!finished)ui.status.textContent='Video kaydedildi: '+a.download;};
+      recorder.start(250);recording=true;ui.rec.innerHTML='⏹ &nbsp; KAYDI DURDUR';ui.status.textContent='⏺ Video kaydediliyor — durdurmak için KAYDI DURDUR’a basın.';
+    }catch(err){recording=false;ui.status.textContent='Kayıt başlatılamadı: '+err.message;}
+  }
+  function stopRec(){if(recorder&&recorder.state!=='inactive'){try{recorder.stop();}catch(e){recording=false;ui.rec.innerHTML='⏺ &nbsp; KAYIT';}}else{recording=false;ui.rec.innerHTML='⏺ &nbsp; KAYIT';}}
+  ui.rec.addEventListener('click',()=>{recording?stopRec():startRec();});
 
   /* ---------- Başlat ---------- */
   loadImage(0);loadImage(1);refreshAll();applyLive();closePanel();reset();
