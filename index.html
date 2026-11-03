@@ -12,8 +12,11 @@
   body { margin:0; min-height:100%; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; color:var(--cream); background: radial-gradient(circle at 15% 50%, #164344 0,transparent 35%), radial-gradient(circle at 85% 45%, #312b26 0,transparent 36%),#061315; display:grid; place-items:center; overflow:hidden; }
 
   /* ---------- Sahne (9:16 short) ---------- */
-  .stage { position:relative; isolation:isolate; width:min(100vw, 430px, calc(100dvh * 9 / 16)); aspect-ratio:9/16; overflow:hidden; background:radial-gradient(ellipse at 50% 52%,#1d4440 0,#102e2d 37%,#081e20 70%,#07191a 100%); box-shadow:0 24px 100px #0009, 0 0 0 1px #ffffff14; user-select:none; transition:transform .4s cubic-bezier(.2,.8,.2,1); }
-  @media (min-width:820px) { body.panel-open .stage { transform:translateX(min(0px, calc((100vw - 430px) / 2 - var(--panel-w) - 16px))); } }
+  .arena-layout { display:flex; align-items:center; justify-content:center; gap:22px; transition:transform .4s cubic-bezier(.2,.8,.2,1); }
+  .stage { position:relative; flex:none; isolation:isolate; width:min(430px, calc(100dvh * 9 / 16), calc(100vw - 190px)); aspect-ratio:9/16; overflow:hidden; background:radial-gradient(ellipse at 50% 52%,#1d4440 0,#102e2d 37%,#081e20 70%,#07191a 100%); box-shadow:0 24px 100px #0009, 0 0 0 1px #ffffff14; user-select:none; transition:transform .4s cubic-bezier(.2,.8,.2,1); }
+  @media (min-width:820px) { body.panel-open .arena-layout { transform:translateX(min(0px, calc(50vw - 696px))); } }
+  @media (max-width:620px) { .arena-layout { gap:7px; } .stage { width:min(430px, calc(100dvh * 9 / 16), calc(100vw - 91px)); } }
+  @media (max-height:540px) { .stage { width:min(430px, calc(100dvh * 9 / 16), calc(100vw - 91px)); } }
   .stage:before { content:""; position:absolute; inset:0; z-index:0; pointer-events:none; opacity:.28; background:repeating-linear-gradient(0deg,transparent 0px,transparent 3px,#ffffff08 4px), radial-gradient(circle at 50% 38%,#74e3b718,transparent 55%); }
   .stage:after { content:""; position:absolute; inset:10px; border:1px solid #d4fff014; pointer-events:none; z-index:5; }
   canvas { position:absolute; inset:0; width:100%; height:100%; z-index:1; }
@@ -65,15 +68,19 @@
   .timer-box {text-align:center;border-left:1px solid rgba(0,255,213,.35);border-right:1px solid rgba(0,255,213,.35);padding:4px 0;}
   .timer-label {display:block;font-size:8px;color:#b3c8bd;letter-spacing:.18em;font-weight:800;margin-bottom:2px;}
   #timer {font-size:18px;font-weight:900;font-variant-numeric:tabular-nums;letter-spacing:.02em;}
-  .bottom {position:absolute;z-index:3;left:8%;right:8%;bottom:3.2%;text-align:center;transition:opacity .25s;}
-  .stage.playing .bottom {opacity:0;}
-  .stage.playing .bottom:hover {opacity:1;}
+  /* Kontroller 9:16 videonun tamamen dışında, sahnenin yanında. */
+  .bottom { flex:none; width:148px; padding:16px 12px; border:1px solid #a5d7c32b; border-radius:14px; background:linear-gradient(160deg,#10302f,#081b1d); box-shadow:0 20px 50px #0006; text-align:center; transition:opacity .25s; }
+  .bottom-label { display:block; margin-bottom:14px; color:#83cdb1; font:900 9px/1.4 inherit; letter-spacing:.2em; }
+  .stage.playing + .bottom {opacity:0;}
+  .stage.playing + .bottom:hover,.stage.playing + .bottom:focus-within {opacity:1;}
+  @media (hover:none) { .stage.playing + .bottom {opacity:.18;} .stage.playing + .bottom:focus-within {opacity:1;} }
+  @media (max-width:620px), (max-height:540px) { .bottom {width:76px;padding:10px 5px;border-radius:9px;} .bottom-label {font-size:7px;letter-spacing:.06em;margin-bottom:9px;} }
   .status {font-weight:950;font-size:clamp(16px,4.8vw,22px);letter-spacing:-.045em;line-height:1.08;text-transform:uppercase;min-height:27px;transition:color .2s;overflow-wrap:anywhere;text-shadow:0 0 18px rgba(0,255,213,.4);}
-  .controls {display:flex;justify-content:center;gap:8px;}
-  .controls button {appearance:none;border:1px solid #a0dbbd55;border-radius:5px;background:#b8e7cd;color:#0b2927;min-width:114px;height:36px;font:850 10px/1 inherit;letter-spacing:.13em;cursor:pointer;transition:transform .2s,background .2s;}
+  .controls {display:flex;flex-direction:column;gap:9px;}
+  .controls button {appearance:none;border:1px solid #a0dbbd55;border-radius:7px;background:#b8e7cd;color:#0b2927;width:100%;min-height:43px;padding:6px 4px;font:850 10px/1.3 inherit;letter-spacing:.06em;cursor:pointer;transition:transform .2s,background .2s;}
   .controls button:hover {transform:translateY(-2px);background:#d9ffe8;box-shadow:0 0 14px rgba(0,255,213,.4);}
   .controls button:focus-visible {outline:2px solid #00ffd5;outline-offset:3px;}
-  .controls button.secondary {background:#163531d9;color:#dcf2e5;min-width:100px;}
+  .controls button.secondary {background:#163531d9;color:#dcf2e5;}
   .controls button.secondary:hover {background:#245047;}
   /* Tek Renk Neon Geri Sayım Çubuğu (Lazer / Parlama Efektli - Ateşsiz) */
   .fuse-wrap {position:absolute;z-index:4;bottom:0;left:0;width:100%;height:6px;pointer-events:none;}
@@ -136,7 +143,7 @@
   .event-kicker {color:#a8c7bc;font-size:7px;font-weight:900;letter-spacing:.22em;line-height:1;}
   .event-word {color:var(--event-color,#ffd166);font-size:15px;font-weight:1000;letter-spacing:.045em;line-height:1;text-shadow:0 0 12px var(--event-glow,rgba(255,209,102,.3));white-space:nowrap;}
   .event-sub {color:#e2f1e8;font-size:9px;font-weight:800;letter-spacing:.08em;line-height:1.1;white-space:nowrap;}
-  @media(max-height:630px) { .controls {margin-top:9px} .bottom {bottom:3%} }
+  @media (max-width:620px), (max-height:540px) { .controls {gap:6px;} .controls button {font-size:9px;letter-spacing:0;min-height:47px;overflow-wrap:anywhere;} }
 
   /* ---------- Yönetim paneli ---------- */
   .admin-toggle { position:fixed; top:14px; right:14px; z-index:45; display:inline-flex; align-items:center; gap:8px; height:40px; padding:0 15px 0 12px; border-radius:999px; background:#0e2a2ccc; border:1px solid #a5d7c355; color:#d9fff0; font:850 10px/1 inherit; letter-spacing:.16em; backdrop-filter:blur(8px); box-shadow:0 8px 30px #0008; cursor:pointer; transition:transform .2s, background .2s; }
@@ -244,6 +251,7 @@
 </style>
 </head>
 <body>
+<div class="arena-layout">
 <main class="stage" aria-label="İki logonun çember içinde sektiği, çemberin çizgisi üzerinde dönen kaleli logo arenası">
   <canvas id="game" width="800" height="1422" aria-hidden="true"></canvas>
   <div class="scoreboard" aria-live="polite">
@@ -262,9 +270,10 @@
   <div class="midline" aria-live="polite"><div class="status" id="status">İLK GOLÜ KİM ATACAK?</div></div>
   <div class="event-banner" id="eventBanner" aria-live="polite"><span class="event-icon" id="eventIcon" aria-hidden="true">⚽</span><div class="event-copy"><span class="event-kicker" id="eventKicker">MAÇ ANI</span><strong class="event-word" id="eventWord">PENALTI!</strong><span class="event-sub" id="eventSub"></span></div></div>
   <div class="goal-overlay" id="goalOverlay"><span class="var-frame" aria-hidden="true"></span><div class="call-card"><span class="var-strip"><i></i>VAR · OFSAYT KONTROLÜ</span><span class="call-kicker" id="callKicker">GOL ANI</span><span class="call-icon" id="callIcon" aria-hidden="true">⚽</span><span class="goal-word" id="goalWord">GOL!</span><span class="call-sub" id="callSub"></span><span class="var-steps" aria-hidden="true"><i></i><i></i><i></i></span></div></div>
-  <div class="bottom"><div class="controls"><button id="playBtn" type="button">⏸ &nbsp; DURAKLAT</button><button id="resetBtn" type="button" class="secondary">↻ &nbsp; YENİDEN</button><button id="recBtn" type="button" class="secondary">⏺ &nbsp; KAYIT</button></div></div>
   <div class="fuse-wrap" id="fuseWrap" aria-hidden="true"><div class="fuse-track"><div class="fuse-bar" id="progress"><div class="neon-tip" id="fuseSpark"><span class="neon-point"></span><span class="neon-halo"></span></div></div></div></div>
 </main>
+<aside class="bottom" aria-label="Maç kontrolleri"><span class="bottom-label">KONTROLLER</span><div class="controls"><button id="playBtn" type="button">▶ &nbsp; BAŞLAT</button><button id="resetBtn" type="button" class="secondary">↻ &nbsp; YENİDEN</button><button id="recBtn" type="button" class="secondary">⏺ &nbsp; KAYIT</button></div></aside>
+</div>
 
 <!-- Kayıt önizleme: sahnenin dışında, kayda girmez -->
 <div class="rec-preview" id="recPreview" hidden>
