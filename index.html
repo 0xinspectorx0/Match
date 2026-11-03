@@ -234,6 +234,14 @@
   input.num { width:48px; height:34px; border-radius:8px; border:1px solid #a5d7c344; background:#08201f; color:#eafdf3; font:900 13px/1 inherit; text-align:center; }
   input.num:focus { outline:2px solid #9ce9bb; outline-offset:1px; }
   .card-note { font-size:10px; color:#8fb3a6; line-height:1.4; }
+  .duration-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px 14px; }
+  .duration-field { display:flex; align-items:center; justify-content:space-between; gap:8px; min-width:0; }
+  .duration-field > span:first-child { color:#cfe6da; font-size:10px; font-weight:750; line-height:1.3; }
+  .duration-field .numwrap { flex:none; }
+  .duration-field input.num { width:56px; }
+  .duration-note { margin-top:11px; }
+  .duration-note b { color:#b8e7cd; }
+  @media (max-width:360px){ .duration-grid { grid-template-columns:1fr; } }
   .admin-foot { padding:12px 18px calc(12px + env(safe-area-inset-bottom)); border-top:1px solid #a5d7c322; background:#06161a; }
   .foot-row { display:grid; grid-template-columns:1fr auto; gap:8px; }
   .rec-preview { position:fixed; z-index:60; left:50%; bottom:18px; transform:translateX(-50%); width:min(340px,92vw); background:#0a2422f2; border:1px solid #00ffd566; border-radius:12px; padding:10px; box-shadow:0 12px 40px #000c, 0 0 22px rgba(0,255,213,.18); }
@@ -331,6 +339,16 @@
       </div>
     </section>
     <section class="card">
+      <div class="card-head"><h3>YAZI SÜRELERİ</h3><span class="sub">0,1–10 saniye</span></div>
+      <div class="duration-grid">
+        <label class="duration-field"><span>VAR kontrolü</span><span class="numwrap"><input type="number" class="num" id="textVarCheck" min="0.1" max="10" step="0.1" inputmode="decimal" aria-label="VAR kontrolü yazısının ekranda kalma süresi"><small>sn</small></span></label>
+        <label class="duration-field"><span>Gol / VAR kararı</span><span class="numwrap"><input type="number" class="num" id="textVarVerdict" min="0.1" max="10" step="0.1" inputmode="decimal" aria-label="Gol ve VAR kararı yazısının ekranda kalma süresi"><small>sn</small></span></label>
+        <label class="duration-field"><span>Olay ve kartlar</span><span class="numwrap"><input type="number" class="num" id="textEvent" min="0.1" max="10" step="0.1" inputmode="decimal" aria-label="Olay ve kart yazılarının ekranda kalma süresi"><small>sn</small></span></label>
+        <label class="duration-field"><span>Devre arası</span><span class="numwrap"><input type="number" class="num" id="textHalf" min="0.1" max="10" step="0.1" inputmode="decimal" aria-label="Devre arası yazısının ekranda kalma süresi"><small>sn</small></span></label>
+      </div>
+      <div class="card-note duration-note"><b id="varTotal">VAR + karar: 1 sn</b><br>Süreler yeni gösterilecek yazılar için uygulanır. Maç sonu yazısı yeniden başlatana kadar ekranda kalır.</div>
+    </section>
+    <section class="card">
       <div class="card-head"><h3>KARTLAR</h3><span class="sub">🟨 ≤6 · 🟥 ≤2 · 0 = kartsız</span></div>
       <div class="card-team-row"><span class="dot" id="cardDot0"></span><span class="tname" id="cardTeam0">TAKIM 1</span><label class="numwrap" title="Sarı kart sayısı"><small>🟨</small><input type="number" class="num" id="cy0" min="0" max="6" step="1" inputmode="numeric" aria-label="Takım 1 sarı kart"></label><label class="numwrap" title="Kırmızı kart sayısı"><small>🟥</small><input type="number" class="num" id="cr0" min="0" max="2" step="1" inputmode="numeric" aria-label="Takım 1 kırmızı kart"></label></div>
       <div class="card-team-row"><span class="dot" id="cardDot1"></span><span class="tname" id="cardTeam1">TAKIM 2</span><label class="numwrap" title="Sarı kart sayısı"><small>🟨</small><input type="number" class="num" id="cy1" min="0" max="6" step="1" inputmode="numeric" aria-label="Takım 2 sarı kart"></label><label class="numwrap" title="Kırmızı kart sayısı"><small>🟥</small><input type="number" class="num" id="cr1" min="0" max="2" step="1" inputmode="numeric" aria-label="Takım 2 kırmızı kart"></label></div>
@@ -365,7 +383,7 @@
 
   const DEFAULTS={
     teams:[{name:'ALEV',color:'#ff8758',logo:'flame',image:null,scale:1},{name:'ŞİMŞEK',color:'#6ce5e5',logo:'bolt',image:null,scale:1}],
-    duration:60, speed:1, cardPlan:{y0:1,r0:0,y1:1,r1:0}, title1:'BİR ÇEMBER.', title2:'DÖNEN KALE.', hideButton:false
+    duration:60, speed:1, cardPlan:{y0:1,r0:0,y1:1,r1:0}, textTimes:{varCheck:0.5,varVerdict:0.5,event:0.5,half:0.5}, title1:'BİR ÇEMBER.', title2:'DÖNEN KALE.', hideButton:false
   };
   const ICONS={
     flame:{label:'Alev',d:'M12.6 1.5c.6 4.3-2.4 5.7-1.1 8.2 2.1-.8 3.2-2.4 3.4-4.2 3.7 3.1 5.4 6.7 5.1 9.8-.4 4.5-3.6 7.4-8 7.4s-7.6-2.9-8-7.3C3.7 11.6 6.3 7.9 12.6 1.5Zm-.4 11.6c-2.1 2.7-3.4 4-3.1 6 .2 1.7 1.3 2.7 2.9 2.7s2.9-1.2 3-2.8c.1-1.4-.8-2.6-2.8-5.9Z'},
@@ -381,6 +399,7 @@
   const PRESETS=['#ff8758','#6ce5e5','#ffd166','#ff5c7a','#7bf1a8','#b48cff','#ff9ff3','#f4f7f5'];
   const clone=o=>JSON.parse(JSON.stringify(o));
   const isHex=c=>typeof c==='string'&&/^#[0-9a-f]{6}$/i.test(c);
+  function clampTextTime(v,fallback=0.5){v=Number(v);if(!Number.isFinite(v))v=fallback;return Math.min(10,Math.max(0.1,Math.round(v*10)/10));}
   function sanitize(s){
     s.teams=s.teams.slice(0,2).map((t,i)=>{
       const d=DEFAULTS.teams[i]; t=Object.assign({},d,t||{});
@@ -395,6 +414,8 @@
     s.duration=Math.min(180,Math.max(10,Math.round((+s.duration||60)/5)*5));
     if(s.speed===undefined&&s.goalSpeed!==undefined){s.speed=+s.goalSpeed<=0.7?1:(+s.goalSpeed>=1.5?4:3);}
     s.speed=(+s.speed>=1&&+s.speed<=10&&Number.isInteger(+s.speed))?+s.speed:1;
+    const times=s.textTimes&&typeof s.textTimes==='object'?s.textTimes:{};s.textTimes={};
+    Object.keys(DEFAULTS.textTimes).forEach(k=>s.textTimes[k]=clampTextTime(times[k],DEFAULTS.textTimes[k]));
     s.title1=String(s.title1??DEFAULTS.title1).slice(0,18); s.title2=String(s.title2??DEFAULTS.title2).slice(0,18);
     s.hideButton=!!s.hideButton; return s;
   }
@@ -759,7 +780,7 @@
     else if(key==='yellow')detail=teamName(id)+' · '+(++cards[id].yellow)+'. SARI KART';
     else if(key==='red')detail=teamName(id)+' · '+(++cards[id].red)+'. KIRMIZI KART';
     if(key==='yellow'||key==='red')renderCards({id,key});
-    ui.eventWord.textContent=ev.title;ui.eventIcon.textContent=ev.icon;ui.eventKicker.textContent=ev.kicker;ui.eventSub.textContent=detail;ui.eventBanner.style.setProperty('--event-color',ev.color);ui.eventBanner.style.setProperty('--event-glow',rgba(ev.color,.24));ui.eventBanner.classList.add('visible');eventFlash=0.5;eventStatus=ev.title+' · '+teamName(id);eventColor=ev.color;
+    ui.eventWord.textContent=ev.title;ui.eventIcon.textContent=ev.icon;ui.eventKicker.textContent=ev.kicker;ui.eventSub.textContent=detail;ui.eventBanner.style.setProperty('--event-color',ev.color);ui.eventBanner.style.setProperty('--event-glow',rgba(ev.color,.24));ui.eventBanner.classList.add('visible');eventFlash=settings.textTimes.event;eventStatus=ev.title+' · '+teamName(id);eventColor=ev.color;
     if(goalFlash<=0){ui.status.textContent=eventStatus;ui.status.style.color=eventColor;}
     if(key==='post'){
       const side=Math.random()<.5?-1:1,ca=Math.cos(goalAngle),sa=Math.sin(goalAngle);
@@ -775,7 +796,7 @@
     }
   }
   /* ---------- VAR & Gol: her gol VAR'a gitmez, rastgele girer ---------- */
-    const VAR={check:0.5,verdict:0.5,chance:0.66,reasons:['OFSAYT']}; // VAR + VAR karari yazilari toplam 0.5+0.5 = 1 sn ekranda kalir; sonra mac devam eder.
+  const VAR={chance:0.66,reasons:['OFSAYT']}; // İnceleme ve karar süreleri yönetim panelindeki yazı sürelerinden okunur.
   let varState=null;
   const scoreLine=()=>teamName(0)+' '+scores[0]+' – '+scores[1]+' '+teamName(1);
   const WHISTLE_SVG='<svg viewBox="0 0 64 64" aria-hidden="true"><rect x="4" y="17" width="27" height="13" rx="4" fill="#ffd166"/><rect x="19" y="21" width="8" height="5" rx="2" fill="#08201f" opacity=".8"/><circle cx="40" cy="38" r="17" fill="#ffd166"/><circle cx="40" cy="38" r="5.5" fill="#08201f"/></svg>';
@@ -783,11 +804,11 @@
   function clampCard(v,hi){v=Math.round(+v||0);return Math.max(0,Math.min(hi,v));}
   function cardTargets(){const p=settings.cardPlan=settings.cardPlan||{};return{y0:clampCard(p.y0,6),r0:clampCard(p.r0,2),y1:clampCard(p.y1,6),r1:clampCard(p.r1,2)};}
   function rebuildCardPlan(fromElapsed){const p=cardTargets(),items=[];[[0,'yellow',p.y0],[0,'red',p.r0],[1,'yellow',p.y1],[1,'red',p.r1]].forEach(([id,key,target])=>{for(let n=cards[id][key];n<target;n++)items.push({key,id,t:0});});const hi=Math.max(1.6,DUR()-1.5),lo=Math.min(Math.max(0.8,fromElapsed+0.7),hi-0.3);const n=items.length,span=Math.max(0.5,hi-lo);const minGap=Math.max(2.5,Math.min(8,span/(n+1)));items.forEach((it,i)=>{it.t=Math.min(hi,lo+span*(i+rand(0.25,0.75))/Math.max(1,n)+rand(-0.8,0.8));});items.sort((a,b)=>a.t-b.t);for(let i=1;i<n;i++){if(items[i].t-items[i-1].t<minGap)items[i].t=Math.min(hi,items[i-1].t+minGap);}cardPlan=items;}
-  function announceCard(key,id){const ev=RANDOM_EVENTS[key];cards[id][key]++;const detail=teamName(id)+' · '+(key==='yellow'?cards[id].yellow+'. SARI KART':cards[id].red+'. KIRMIZI KART');renderCards({id,key});ui.eventWord.textContent=ev.title;ui.eventIcon.textContent=ev.icon;ui.eventKicker.textContent=ev.kicker;ui.eventSub.textContent=detail;ui.eventBanner.style.setProperty('--event-color',ev.color);ui.eventBanner.style.setProperty('--event-glow',rgba(ev.color,.24));ui.eventBanner.classList.add('visible');eventFlash=0.5;eventStatus=ev.title+' · '+teamName(id);eventColor=ev.color;if(goalFlash<=0){ui.status.textContent=eventStatus;ui.status.style.color=eventColor;}const b=balls.find(x=>x.id===id&&x.inNet<=0);if(b){burst(b.x,b.y,ev.color,key==='red'?18:12);if(key==='red')shake=5;}}
+  function announceCard(key,id){const ev=RANDOM_EVENTS[key];cards[id][key]++;const detail=teamName(id)+' · '+(key==='yellow'?cards[id].yellow+'. SARI KART':cards[id].red+'. KIRMIZI KART');renderCards({id,key});ui.eventWord.textContent=ev.title;ui.eventIcon.textContent=ev.icon;ui.eventKicker.textContent=ev.kicker;ui.eventSub.textContent=detail;ui.eventBanner.style.setProperty('--event-color',ev.color);ui.eventBanner.style.setProperty('--event-glow',rgba(ev.color,.24));ui.eventBanner.classList.add('visible');eventFlash=settings.textTimes.event;eventStatus=ev.title+' · '+teamName(id);eventColor=ev.color;if(goalFlash<=0){ui.status.textContent=eventStatus;ui.status.style.color=eventColor;}const b=balls.find(x=>x.id===id&&x.inNet<=0);if(b){burst(b.x,b.y,ev.color,key==='red'?18:12);if(key==='red')shake=5;}}
   function varClearOverlay(){ui.overlay.classList.remove('visible','var-mode','var-valid','var-cancel','var-done');ui.overlay.style.removeProperty('--call-glow');ui.callSub.style.color='';}
   function directGoal(b){
-    const id=b.id,col=teamColor(id),name=teamName(id),m=matchMinute();
-    b.inNet=0.5; // gol olunca logo yarım saniye filelerin içinde kalsın
+    const id=b.id,col=teamColor(id),name=teamName(id),m=matchMinute(),duration=settings.textTimes.varVerdict;
+    b.inNet=duration; // gol yazısı boyunca logo filelerin içinde kalır
     scores[id]++;ui.scores[id].textContent=scores[id];
     goalLog[id].push(m);renderGoals(goalLog[id].length-1);
     eventFlash=0;ui.eventBanner.classList.remove('visible');ui.eventBanner.style.removeProperty('--event-color');ui.eventBanner.style.removeProperty('--event-glow');
@@ -800,12 +821,12 @@
     ui.callSub.textContent=name+' · '+m+'. DAKİKA';ui.callSub.style.color=col;
     ui.status.textContent=name+' GOL ATTI!';ui.status.style.color=col;
     shake=14;const mouth=goalMouth();burst(mouth.x,mouth.y,col,42);crowdCelebrate(id);
-    goalFlash=0.5;goalCooldown=0.55;nextEventAt=Math.max(nextEventAt,elapsed+1.2); // gol sonrasi hic beklemeden devam eder (yazi 0.5 sn ekranda kalabilir)
+    goalFlash=duration;goalCooldown=Math.max(0.55,duration+0.05);nextEventAt=Math.max(nextEventAt,elapsed+1.2); // gol yazisi paneldeki sure boyunca ekranda kalir
   }
   function startVAR(b){
-    const id=b.id;
-    varState={id,t:0,phase:'check',minute:matchMinute(),valid:Math.random()<VAR.chance,reason:VAR.reasons[Math.floor(Math.random()*VAR.reasons.length)]};
-    b.inNet=VAR.check+VAR.verdict+0.15; // inceleme boyunca logo fileden çıkmaz
+    const id=b.id,check=settings.textTimes.varCheck,verdict=settings.textTimes.varVerdict;
+    varState={id,t:0,phase:'check',check,verdict,minute:matchMinute(),valid:Math.random()<VAR.chance,reason:VAR.reasons[Math.floor(Math.random()*VAR.reasons.length)]};
+    b.inNet=check+verdict+0.15; // inceleme boyunca logo fileden çıkmaz
     eventFlash=0;
     ui.eventBanner.classList.remove('visible');ui.eventBanner.style.removeProperty('--event-color');ui.eventBanner.style.removeProperty('--event-glow');
     ui.overlay.classList.add('visible','var-mode');
@@ -816,7 +837,7 @@
     ui.word.style.fontSize='';ui.word.style.lineHeight='';ui.word.textContent='VAR';ui.word.style.color='#ecfff7';
     ui.callSub.textContent=teamName(id)+' GOLÜNDE OFSAYT VAR MI?';ui.callSub.style.color='#bfe9dc';
     ui.status.textContent='VAR · '+teamName(id)+' GOLÜ OFSAYT KONTROLÜ';ui.status.style.color='#d9f7ec';
-    actionPause=Math.max(actionPause,VAR.check+VAR.verdict); // yalnizca VAR incelemesi boyunca durur; karar verir vermez oyun devam eder
+    actionPause=Math.max(actionPause,check+verdict); // yalnizca VAR incelemesi boyunca durur; karar verir vermez oyun devam eder
     goalFlash=0;
   }
   function resolveVAR(){
@@ -973,7 +994,7 @@
      5. VAR: önce 'check' incelemesi, sonra 'verdict' kararı; %66 (VAR.chance) geçerli → gol sayılır,
         aksi hâlde iptal edilir (sebep: OFSAYT). Kota dolduysa (takım MAX_GOALS=6 veya matchGoalCap) geçerli gol bile iptal edilir.
      7. Gol sayılınca: skor +1, gol loguna dakika yazılır, ortada GOL! kartı + tribün kutlaması çıkar;
-        golü atan logo 0.5 sn filede (inNet) kalır.
+        golü atan logo, panelde belirlenen yazı süresi boyunca filede (inNet) kalır.
      8. File süresi bitince (VAR yoksa) iki top ortaya yeniden spawn olur.
      9. Ağzın dışı temaslarda top çemberden sekir (wallBounce); en az minWallExit hızla içe döner,
         çembere asla yapışmaz.
@@ -982,7 +1003,7 @@
     if(paused||finished)return;
     const hd=DUR()/2,wasHalf=elapsed>=hd?1:0;
     elapsed=Math.min(DUR(),elapsed+dt);syncUI();updateCrowd(dt);
-    if(elapsed>=hd&&wasHalf===0){whistle(1);crowdBoost[0]=Math.max(crowdBoost[0],1.0);crowdBoost[1]=Math.max(crowdBoost[1],1.0);ui.status.textContent='İLK YARI BİTTİ — İKİNCİ YARI BAŞLIYOR!';ui.status.style.color='';if(!varState){showWhistleCard('İLK YARI BİTTİ',scoreLine(),'DEVRE ARASI','İLK YARI<br>BİTTİ');goalFlash=0.5;actionPause=Math.max(actionPause,0.5);}} // ilk yari yazisi 0.5 sn kalir; gidince oyun hemen devam eder
+    if(elapsed>=hd&&wasHalf===0){whistle(1);crowdBoost[0]=Math.max(crowdBoost[0],1.0);crowdBoost[1]=Math.max(crowdBoost[1],1.0);ui.status.textContent='İLK YARI BİTTİ — İKİNCİ YARI BAŞLIYOR!';ui.status.style.color='';if(!varState){const halfTime=settings.textTimes.half;showWhistleCard('İLK YARI BİTTİ',scoreLine(),'DEVRE ARASI','İLK YARI<br>BİTTİ');goalFlash=halfTime;actionPause=Math.max(actionPause,halfTime);}} // devre arasi yazisi paneldeki sure boyunca kalir
     goalCooldown=Math.max(0,goalCooldown-dt);goalFlash=Math.max(0,goalFlash-dt);eventFlash=Math.max(0,eventFlash-dt);actionPause=Math.max(0,actionPause-dt);shake=Math.max(0,shake-dt*35);
     const sm=spdMul();
     // Gol modu açık mı? (kota/VAR/cooldown/son saniye) — kapalıyken toplar kaleye YAKLAŞMAZ.
@@ -995,8 +1016,8 @@
     // VAR: önce inceleme, sonra karar; logo bu sırada filede bekler.
     if(varState){
       varState.t+=dt;
-      if(varState.phase==='check'&&varState.t>=VAR.check)resolveVAR();
-      else if(varState.phase==='verdict'&&varState.t>=VAR.verdict)endVAR();
+      if(varState.phase==='check'&&varState.t>=varState.check)resolveVAR();
+      else if(varState.phase==='verdict'&&varState.t>=varState.verdict)endVAR();
     }
     if(!varState&&actionPause<=0&&elapsed>=nextEventAt&&goalFlash<=0&&eventFlash<=0&&goalCooldown<=0&&elapsed<DUR()-1.25&&balls.every(b=>b.inNet<=0)){announceRandomEvent();nextEventAt=elapsed+rand(2.55,3.45);}
     if(!varState&&actionPause<=0&&goalFlash<=0&&eventFlash<=0&&goalCooldown<=0&&cardPlan.length&&elapsed>=cardPlan[0].t&&elapsed<DUR()-1.3&&balls.every(b=>b.inNet<=0)){const c=cardPlan.shift();announceCard(c.key,c.id);}
@@ -1008,7 +1029,7 @@
     const dt=outerDt/steps;
     if(!frozen)enforceBounceCycle(dt,sm,goalOpen);
     for(const b of balls){
-      // Fileye giren logo 0.5 sn içeride kalsın, sonra oyun devam etsin.
+      // Fileye giren logo, paneldeki yazı süresi dolunca oyuna devam eder.
       if(b.inNet>0){
         b.inNet-=dt;netPhysics(b,dt);
         b.trail.push({x:b.x,y:b.y});if(b.trail.length>11)b.trail.shift();
@@ -1258,6 +1279,15 @@
   }
   segBtns.forEach(b=>b.addEventListener('click',()=>{settings.speed=+b.dataset.v;updateSpeedUI();save();}));
 
+  // Ekrandaki yazıların süreleri: saniye cinsinden manuel giriş
+  const textIns={varCheck:$('textVarCheck'),varVerdict:$('textVarVerdict'),event:$('textEvent'),half:$('textHalf')};
+  function updateTextTimeUI(){
+    Object.entries(textIns).forEach(([key,inp])=>inp.value=settings.textTimes[key]);
+    const total=settings.textTimes.varCheck+settings.textTimes.varVerdict;
+    $('varTotal').textContent='VAR + karar: '+total.toLocaleString('tr-TR',{maximumFractionDigits:1})+' sn';
+  }
+  Object.entries(textIns).forEach(([key,inp])=>inp.addEventListener('change',()=>{settings.textTimes[key]=clampTextTime(inp.value,DEFAULTS.textTimes[key]);updateTextTimeUI();save();note('Yazı süresi güncellendi.',true);}));
+
   // Kart planı: manuel sarı/kırmızı sayıları (0 = kartsız maç)
   const cardIns={y0:$('cy0'),r0:$('cr0'),y1:$('cy1'),r1:$('cr1')};
   function updateCardUI(){const p=cardTargets();cardIns.y0.value=p.y0;cardIns.r0.value=p.r0;cardIns.y1.value=p.y1;cardIns.r1.value=p.r1;for(let i=0;i<2;i++){const col=settings.teams[i].color,d=$('cardDot'+i);if(d){d.style.background=col;d.style.boxShadow='0 0 8px '+col;}$('cardTeam'+i).textContent=teamName(i);}}
@@ -1267,7 +1297,7 @@
   const hideIn=$('hideBtn');
   hideIn.addEventListener('change',()=>{settings.hideButton=hideIn.checked;applyLive();save();if(hideIn.checked)note('Düğme gizlendi. Paneli açmak için Y tuşu ya da sahneye çift tık.',true);});
 
-  function refreshAll(){refreshers.forEach(fn=>fn());updateDurUI();updateSpeedUI();updateCardUI();hideIn.checked=settings.hideButton;}
+  function refreshAll(){refreshers.forEach(fn=>fn());updateDurUI();updateSpeedUI();updateTextTimeUI();updateCardUI();hideIn.checked=settings.hideButton;}
 
   // Uygula & yeniden başlat
   $('applyBtn').addEventListener('click',()=>{clearTimeout(saveTimer);try{localStorage.setItem(STORE_KEY,JSON.stringify(settings));}catch(e){}applyLive();reset();closePanel();beginNow();});
