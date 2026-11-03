@@ -443,7 +443,7 @@
   const GW=R*Math.sin(HALF_GAP), PX=R*Math.cos(HALF_GAP), BX=R+NET, POST=7;
   // Tek parça U çerçeve: iki dikdörtgen direk + direklerin ucuna tam oturan üst direk (çıkıntı yok).
   function framePath(){ctx.beginPath();ctx.moveTo(PX,-GW-POST/2);ctx.lineTo(BX,-GW-POST/2);ctx.lineTo(BX,GW+POST/2);ctx.lineTo(PX,GW+POST/2);ctx.lineTo(PX,GW-POST/2);ctx.lineTo(BX-POST,GW-POST/2);ctx.lineTo(BX-POST,-GW+POST/2);ctx.lineTo(PX,-GW+POST/2);ctx.closePath();}
-  let balls=[],particles=[],elapsed=0,paused=false,finished=false,goalFlash=0,eventFlash=0,last=0,shake=0,goalCooldown=0,actionPause=0,scores=[0,0],matchGoalCap=0;
+  let balls=[],particles=[],elapsed=0,paused=false,finished=false,goalFlash=0,eventFlash=0,last=0,shake=0,goalCooldown=0,actionPause=0,centerWait=0,scores=[0,0],matchGoalCap=0;
   let eventDeck=[],nextEventAt=0,eventStatus='',eventColor='',cards=[{yellow:0,red:0},{yellow:0,red:0}],cardPlan=[];
   const MAX_GOALS=6, CARD_CAPS={yellow:6,red:2}; // takım başına üst sınırlar
   let goalLog=[[],[]]; // takım başına atılan gollerin maç dakikaları
@@ -707,7 +707,7 @@
     else el.innerHTML=iconSvg(t.logo);}
   // Ayarları sahneye anında yansıt (maçı bozmadan).
   function applyLive(){for(let i=0;i<2;i++){ui.names[i].textContent=teamName(i);renderBadge(i);}renderGoals();document.body.classList.toggle('hide-admin-btn',settings.hideButton);syncUI();drawPreviews((typeof performance!=='undefined'?performance.now():0)/1000);}
-  function reset(){varState=null;balls=makeBallPair();particles=[];elapsed=0;paused=false;finished=false;goalFlash=0;eventFlash=0;goalCooldown=0;actionPause=0;scores=[0,0];matchGoalCap=rollMatchGoalCap();cards=[{yellow:0,red:0},{yellow:0,red:0}];goalLog=[[],[]];eventDeck=[];nextEventAt=rand(1.1,1.8);rebuildCardPlan(0);spawnCrowd();eventStatus='';eventColor='';goalAngle=-Math.PI/2;ui.scores.forEach(e=>e.textContent='0');ui.status.textContent='İLK GOLÜ KİM ATACAK?';ui.status.style.color='';varClearOverlay();ui.eventBanner.classList.remove('visible');ui.eventBanner.style.removeProperty('--event-color');ui.eventBanner.style.removeProperty('--event-glow');ui.word.style.fontSize='';ui.word.style.lineHeight='';ui.word.textContent='GOL!';ui.word.style.color='';ui.callKicker.textContent='GOL ANI';ui.callIcon.textContent='⚽';ui.callSub.textContent='';ui.callSub.style.color='';ui.play.innerHTML='⏸ &nbsp; DURAKLAT';renderCards();renderGoals();syncUI();}
+  function reset(){varState=null;balls=makeBallPair();particles=[];elapsed=0;paused=false;finished=false;goalFlash=0;eventFlash=0;goalCooldown=0;actionPause=0;centerWait=0;scores=[0,0];matchGoalCap=rollMatchGoalCap();cards=[{yellow:0,red:0},{yellow:0,red:0}];goalLog=[[],[]];eventDeck=[];nextEventAt=rand(1.1,1.8);rebuildCardPlan(0);spawnCrowd();eventStatus='';eventColor='';goalAngle=-Math.PI/2;ui.scores.forEach(e=>e.textContent='0');ui.status.textContent='İLK GOLÜ KİM ATACAK?';ui.status.style.color='';varClearOverlay();ui.eventBanner.classList.remove('visible');ui.eventBanner.style.removeProperty('--event-color');ui.eventBanner.style.removeProperty('--event-glow');ui.word.style.fontSize='';ui.word.style.lineHeight='';ui.word.textContent='GOL!';ui.word.style.color='';ui.callKicker.textContent='GOL ANI';ui.callIcon.textContent='⚽';ui.callSub.textContent='';ui.callSub.style.color='';ui.play.innerHTML='⏸ &nbsp; DURAKLAT';renderCards();renderGoals();syncUI();}
   const cardEls=[{yellow:$('y0'),red:$('r0')},{yellow:$('y1'),red:$('r1')}];
   function renderCards(pop){
     [0,1].forEach(i=>['yellow','red'].forEach(k=>{
@@ -853,7 +853,7 @@
     ui.status.textContent='SIRADAKİ GOL KİMİN?';ui.status.style.color='';
     goalCooldown=Math.max(goalCooldown,.55);
     nextEventAt=Math.max(nextEventAt,elapsed+1.2);
-    balls=makeBallPair();
+    balls=makeBallPair();centerWait=0.25; // VAR sonrası orta sahada çeyrek saniye bekle
   }
   // Logo fileye girince kale eksenli koordinatta yumuşak şekilde sekerek VAR kararı gelene kadar içeride kalır.
   function netPhysics(b,dt){
@@ -983,11 +983,11 @@
     const hd=DUR()/2,wasHalf=elapsed>=hd?1:0;
     elapsed=Math.min(DUR(),elapsed+dt);syncUI();updateCrowd(dt);
     if(elapsed>=hd&&wasHalf===0){whistle(1);crowdBoost[0]=Math.max(crowdBoost[0],1.0);crowdBoost[1]=Math.max(crowdBoost[1],1.0);ui.status.textContent='İLK YARI BİTTİ — İKİNCİ YARI BAŞLIYOR!';ui.status.style.color='';if(!varState){showWhistleCard('İLK YARI BİTTİ',scoreLine(),'DEVRE ARASI','İLK YARI<br>BİTTİ');goalFlash=0.5;actionPause=Math.max(actionPause,0.5);}} // ilk yari yazisi 0.5 sn kalir; gidince oyun hemen devam eder
-    goalCooldown=Math.max(0,goalCooldown-dt);goalFlash=Math.max(0,goalFlash-dt);eventFlash=Math.max(0,eventFlash-dt);actionPause=Math.max(0,actionPause-dt);shake=Math.max(0,shake-dt*35);
+    goalCooldown=Math.max(0,goalCooldown-dt);goalFlash=Math.max(0,goalFlash-dt);eventFlash=Math.max(0,eventFlash-dt);actionPause=Math.max(0,actionPause-dt);centerWait=Math.max(0,centerWait-dt);shake=Math.max(0,shake-dt*35);
     const sm=spdMul();
     // Gol modu açık mı? (kota/VAR/cooldown/son saniye) — kapalıyken toplar kaleye YAKLAŞMAZ.
     const goalOpen=!varState&&goalCooldown<=0&&elapsed<DUR()-1.6&&scores[0]+scores[1]<matchGoalCap;
-    const frozen=actionPause>0; // aksiyon duraklaması: hareket ve çarpışma durur
+    const frozen=actionPause>0||centerWait>0; // aksiyon duraklaması: hareket ve çarpışma durur
     // Kale çemberin çizgisi üzerinde dönsün; hız kademeye göre ölçeklenir
     goalAngle+=(0.42+0.20*Math.sin(elapsed*0.35))*sm*dt;
     if(!varState&&goalFlash===0&&ui.overlay.classList.contains('visible')){ui.overlay.classList.remove('visible');ui.overlay.style.removeProperty('--call-glow');if(eventFlash>0){ui.status.textContent=eventStatus;ui.status.style.color=eventColor;}else{ui.status.textContent='SIRADAKİ GOL KİMİN?';ui.status.style.color='';}}
@@ -1056,7 +1056,7 @@
     if(!frozen&&!scored)collideBalls(sm);
     }
     for(const b of balls){if(b.inNet<=0){b.trail.push({x:b.x,y:b.y});if(b.trail.length>11)b.trail.shift();}}
-    if(scored)balls=makeBallPair();
+    if(scored){balls=makeBallPair();centerWait=0.25;} // gol sonrası orta sahada çeyrek saniye bekleyip tekrar başlar
     hitCool=Math.max(0,hitCool-outerDt);
     particles=particles.filter(p=>p.life>0);for(const p of particles){p.x+=p.vx*dt;p.y+=p.vy*dt;p.vy+=75*dt;p.life-=dt;}
     if(elapsed>=DUR()){finished=true;if(recording)stopRec();whistle(2);if(scores[0]!==scores[1]){const w=scores[0]>scores[1]?0:1;crowdBoost[w]=2.0;punchChant(w,'chant');}else{crowdBoost[0]=0.85;crowdBoost[1]=0.85;}goalFlash=0;eventFlash=0;varState=null;varClearOverlay();ui.eventBanner.classList.remove('visible');ui.eventBanner.style.removeProperty('--event-color');ui.eventBanner.style.removeProperty('--event-glow');ui.status.style.color='';ui.status.textContent=scores[0]===scores[1]?'BERABERE!':'KAZANAN: '+teamName(scores[0]>scores[1]?0:1)+'!';showWhistleCard('MAÇ SONU',scoreLine()+' · '+(scores[0]===scores[1]?'BERABERE':'KAZANAN: '+teamName(scores[0]>scores[1]?0:1)),'FİNAL DÜDÜĞÜ');ui.play.innerHTML='▶ &nbsp; TEKRAR OYNA';}
