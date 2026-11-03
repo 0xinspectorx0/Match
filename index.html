@@ -759,7 +759,7 @@
     else if(key==='yellow')detail=teamName(id)+' · '+(++cards[id].yellow)+'. SARI KART';
     else if(key==='red')detail=teamName(id)+' · '+(++cards[id].red)+'. KIRMIZI KART';
     if(key==='yellow'||key==='red')renderCards({id,key});
-    ui.eventWord.textContent=ev.title;ui.eventIcon.textContent=ev.icon;ui.eventKicker.textContent=ev.kicker;ui.eventSub.textContent=detail;ui.eventBanner.style.setProperty('--event-color',ev.color);ui.eventBanner.style.setProperty('--event-glow',rgba(ev.color,.24));ui.eventBanner.classList.add('visible');eventFlash=1.2;eventStatus=ev.title+' · '+teamName(id);eventColor=ev.color;
+    ui.eventWord.textContent=ev.title;ui.eventIcon.textContent=ev.icon;ui.eventKicker.textContent=ev.kicker;ui.eventSub.textContent=detail;ui.eventBanner.style.setProperty('--event-color',ev.color);ui.eventBanner.style.setProperty('--event-glow',rgba(ev.color,.24));ui.eventBanner.classList.add('visible');eventFlash=0.5;eventStatus=ev.title+' · '+teamName(id);eventColor=ev.color;
     if(goalFlash<=0){ui.status.textContent=eventStatus;ui.status.style.color=eventColor;}
     if(key==='post'){
       const side=Math.random()<.5?-1:1,ca=Math.cos(goalAngle),sa=Math.sin(goalAngle);
@@ -775,7 +775,7 @@
     }
   }
   /* ---------- VAR & Gol: her gol VAR'a gitmez, rastgele girer ---------- */
-  const VAR={check:0.62,verdict:0.80,chance:0.66,reasons:['OFSAYT']};
+  const VAR={check:0.50,verdict:0.50,chance:0.66,reasons:['OFSAYT']}; // ekrandaki yazilar en fazla yarim saniye kalir
   let varState=null;
   const scoreLine=()=>teamName(0)+' '+scores[0]+' – '+scores[1]+' '+teamName(1);
   const WHISTLE_SVG='<svg viewBox="0 0 64 64" aria-hidden="true"><rect x="4" y="17" width="27" height="13" rx="4" fill="#ffd166"/><rect x="19" y="21" width="8" height="5" rx="2" fill="#08201f" opacity=".8"/><circle cx="40" cy="38" r="17" fill="#ffd166"/><circle cx="40" cy="38" r="5.5" fill="#08201f"/></svg>';
@@ -783,7 +783,7 @@
   function clampCard(v,hi){v=Math.round(+v||0);return Math.max(0,Math.min(hi,v));}
   function cardTargets(){const p=settings.cardPlan=settings.cardPlan||{};return{y0:clampCard(p.y0,6),r0:clampCard(p.r0,2),y1:clampCard(p.y1,6),r1:clampCard(p.r1,2)};}
   function rebuildCardPlan(fromElapsed){const p=cardTargets(),items=[];[[0,'yellow',p.y0],[0,'red',p.r0],[1,'yellow',p.y1],[1,'red',p.r1]].forEach(([id,key,target])=>{for(let n=cards[id][key];n<target;n++)items.push({key,id,t:0});});const hi=Math.max(1.6,DUR()-1.5),lo=Math.min(Math.max(0.8,fromElapsed+0.7),hi-0.3);const n=items.length,span=Math.max(0.5,hi-lo);const minGap=Math.max(2.5,Math.min(8,span/(n+1)));items.forEach((it,i)=>{it.t=Math.min(hi,lo+span*(i+rand(0.25,0.75))/Math.max(1,n)+rand(-0.8,0.8));});items.sort((a,b)=>a.t-b.t);for(let i=1;i<n;i++){if(items[i].t-items[i-1].t<minGap)items[i].t=Math.min(hi,items[i-1].t+minGap);}cardPlan=items;}
-  function announceCard(key,id){const ev=RANDOM_EVENTS[key];cards[id][key]++;const detail=teamName(id)+' · '+(key==='yellow'?cards[id].yellow+'. SARI KART':cards[id].red+'. KIRMIZI KART');renderCards({id,key});ui.eventWord.textContent=ev.title;ui.eventIcon.textContent=ev.icon;ui.eventKicker.textContent=ev.kicker;ui.eventSub.textContent=detail;ui.eventBanner.style.setProperty('--event-color',ev.color);ui.eventBanner.style.setProperty('--event-glow',rgba(ev.color,.24));ui.eventBanner.classList.add('visible');eventFlash=1.2;eventStatus=ev.title+' · '+teamName(id);eventColor=ev.color;if(goalFlash<=0){ui.status.textContent=eventStatus;ui.status.style.color=eventColor;}const b=balls.find(x=>x.id===id&&x.inNet<=0);if(b){burst(b.x,b.y,ev.color,key==='red'?18:12);if(key==='red')shake=5;}}
+  function announceCard(key,id){const ev=RANDOM_EVENTS[key];cards[id][key]++;const detail=teamName(id)+' · '+(key==='yellow'?cards[id].yellow+'. SARI KART':cards[id].red+'. KIRMIZI KART');renderCards({id,key});ui.eventWord.textContent=ev.title;ui.eventIcon.textContent=ev.icon;ui.eventKicker.textContent=ev.kicker;ui.eventSub.textContent=detail;ui.eventBanner.style.setProperty('--event-color',ev.color);ui.eventBanner.style.setProperty('--event-glow',rgba(ev.color,.24));ui.eventBanner.classList.add('visible');eventFlash=0.5;eventStatus=ev.title+' · '+teamName(id);eventColor=ev.color;if(goalFlash<=0){ui.status.textContent=eventStatus;ui.status.style.color=eventColor;}const b=balls.find(x=>x.id===id&&x.inNet<=0);if(b){burst(b.x,b.y,ev.color,key==='red'?18:12);if(key==='red')shake=5;}}
   function varClearOverlay(){ui.overlay.classList.remove('visible','var-mode','var-valid','var-cancel','var-done');ui.overlay.style.removeProperty('--call-glow');ui.callSub.style.color='';}
   function directGoal(b){
     const id=b.id,col=teamColor(id),name=teamName(id),m=matchMinute();
