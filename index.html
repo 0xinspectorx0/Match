@@ -775,7 +775,7 @@
     }
   }
   /* ---------- VAR & Gol: her gol VAR'a gitmez, rastgele girer ---------- */
-  const VAR={check:0.50,verdict:0.50,chance:0.66,reasons:['OFSAYT']}; // ekrandaki yazilar en fazla yarim saniye kalir
+    const VAR={check:0.25,verdict:0.25,chance:0.66,reasons:['OFSAYT']}; // VAR + VAR karari yazilari toplam 0.25+0.25 = 0.5 sn ekranda kalir; sonra mac devam eder.
   let varState=null;
   const scoreLine=()=>teamName(0)+' '+scores[0]+' – '+scores[1]+' '+teamName(1);
   const WHISTLE_SVG='<svg viewBox="0 0 64 64" aria-hidden="true"><rect x="4" y="17" width="27" height="13" rx="4" fill="#ffd166"/><rect x="19" y="21" width="8" height="5" rx="2" fill="#08201f" opacity=".8"/><circle cx="40" cy="38" r="17" fill="#ffd166"/><circle cx="40" cy="38" r="5.5" fill="#08201f"/></svg>';
