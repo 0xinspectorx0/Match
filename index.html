@@ -61,7 +61,8 @@
   .team.right .team-name { grid-column:1; grid-row:2; text-align:center; }
   .badge { width:30px; height:30px; flex:none; border-radius:50%; display:grid; place-items:center; overflow:hidden; background:#112c2c; border:1px solid currentColor; box-shadow:0 0 14px currentColor; transition:color .25s, box-shadow .25s; }
   .badge svg {width:18px;height:18px;fill:currentColor;}
-  .badge img {width:100%;height:100%;object-fit:cover;border-radius:50%;}
+  .badge img {width:100%;height:100%;object-fit:contain;}
+  .badge.custom-logo {border:0;border-radius:0;background:transparent;box-shadow:none;overflow:visible;}
   .badge-letter {font-weight:950;font-size:14px;letter-spacing:-.04em;}
   .team-name {display:block;max-width:100%;font-size:9px;letter-spacing:.16em;font-weight:850;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-transform:uppercase;}
   .team-score {display:block;font-size:29px;font-weight:950;line-height:1;letter-spacing:-.08em;}
@@ -186,7 +187,7 @@
   .logo-opt.active { border-color:currentColor; background:#133634; box-shadow:inset 0 0 14px -2px currentColor; }
   .logo-opt .letter { font-weight:950; font-size:15px; letter-spacing:-.04em; }
   .logo-opt .up { font-size:8px; font-weight:900; letter-spacing:.08em; line-height:1.25; text-align:center; }
-  .logo-opt img { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; }
+  .logo-opt img { position:absolute; inset:0; width:100%; height:100%; object-fit:contain; }
   .logo-opt input[type=file] { position:absolute; inset:0; opacity:0; cursor:pointer; width:100%; height:100%; }
   .logo-help { font-size:10px; color:#8fb3a6; margin-top:8px; line-height:1.4; }
   .scale-field { margin-top:14px; margin-bottom:0; padding-top:12px; border-top:1px dashed #a5d7c322; }
@@ -722,8 +723,8 @@
     drawBubble(chants[0],teamColor(0));
     drawBubble(chants[1],teamColor(1));
   }
-  function renderBadge(i){const el=ui.badges[i],t=settings.teams[i];el.style.color=teamColor(i);
-    if(t.logo==='image'&&t.image){const cur=el.firstElementChild;if(cur&&cur.tagName==='IMG'&&cur.getAttribute('src')===t.image)return;el.innerHTML=`<img src="${t.image}" alt="">`;}
+  function renderBadge(i){const el=ui.badges[i],t=settings.teams[i],custom=t.logo==='image'&&!!t.image;el.style.color=teamColor(i);el.classList.toggle('custom-logo',custom);
+    if(custom){const cur=el.firstElementChild;if(cur&&cur.tagName==='IMG'&&cur.getAttribute('src')===t.image)return;el.innerHTML=`<img src="${t.image}" alt="">`;}
     else if(t.logo==='letter')el.innerHTML=`<span class="badge-letter">${esc(initial(i))}</span>`;
     else el.innerHTML=iconSvg(t.logo);}
   // Ayarları sahneye anında yansıt (maçı bozmadan).
@@ -1083,13 +1084,27 @@
     if(elapsed>=DUR()){finished=true;if(recording)stopRec();whistle(2);if(scores[0]!==scores[1]){const w=scores[0]>scores[1]?0:1;crowdBoost[w]=2.0;punchChant(w,'chant');}else{crowdBoost[0]=0.85;crowdBoost[1]=0.85;}goalFlash=0;eventFlash=0;varState=null;varClearOverlay();ui.eventBanner.classList.remove('visible');ui.eventBanner.style.removeProperty('--event-color');ui.eventBanner.style.removeProperty('--event-glow');ui.status.style.color='';ui.status.textContent=scores[0]===scores[1]?'BERABERE!':'KAZANAN: '+teamName(scores[0]>scores[1]?0:1)+'!';showWhistleCard('MAÇ SONU','','FİNAL DÜDÜĞÜ');ui.play.innerHTML='▶ &nbsp; TEKRAR OYNA';} // final düdüğü/maç sonu kartında alt yazı yok
   }
   function line(x1,y1,x2,y2,color,width=1){ctx.strokeStyle=color;ctx.lineWidth=width;ctx.beginPath();ctx.moveTo(x1,y1);ctx.lineTo(x2,y2);ctx.stroke();}
-  // Top üzerindeki logo: seçilen ikon, baş harf ya da yüklenen görsel. r = top yarıçapı.
+  // Yüklenen görseller kırpılmaz: en-boy oranı korunur ve dairesel top zemini çizilmez.
+  function hasCustomLogo(i){return settings.teams[i].logo==='image'&&!!logoImgs[i];}
+  function drawContainedImage(c,img,cx,cy,maxW,maxH){
+    const iw=img.naturalWidth||img.width,ih=img.naturalHeight||img.height;if(!iw||!ih)return;
+    const s=Math.min(maxW/iw,maxH/ih),w=iw*s,h=ih*s;
+    c.drawImage(img,cx-w/2,cy-h/2,w,h);
+  }
   function drawLogoOn(c,i,col,r){
-    const t=settings.teams[i],img=logoImgs[i], inner=Math.max(2,r-3);
-    if(t.logo==='image'&&img){c.save();c.beginPath();c.arc(0,0,inner,0,TAU);c.clip();c.drawImage(img,-inner,-inner,inner*2,inner*2);c.restore();return;}
+    const t=settings.teams[i];
+    if(hasCustomLogo(i)){drawContainedImage(c,logoImgs[i],0,0,r*2,r*2);return;}
     if(t.logo==='letter'||t.logo==='image'){c.fillStyle=col;c.font='950 '+Math.max(8,Math.round(r))+'px Inter, system-ui, sans-serif';c.textAlign='center';c.textBaseline='middle';c.fillText(initial(i),0,1);return;}
     const ic=ICONS[t.logo];if(!ic||!ic.p2d)return;
     c.save();const s=(r*1.4)/24;c.scale(s,s);c.translate(-12,-12);c.fillStyle=col;c.fill(ic.p2d,'evenodd');c.restore();
+  }
+  function drawBallArt(c,i,col,r,preview=false){
+    const custom=hasCustomLogo(i),ratio=r/(preview?18:BR);c.shadowColor=col;c.shadowBlur=custom?8*ratio:(preview?12:26)*ratio;
+    if(!custom){
+      c.fillStyle=mix(col,'#0b2124',.78);c.strokeStyle=col;c.lineWidth=Math.max(preview?1.4:1.6,(preview?2.2:2.5)*ratio);c.beginPath();c.arc(0,0,r,0,TAU);c.fill();c.stroke();c.shadowBlur=0;
+      c.strokeStyle='#ffffff54';c.lineWidth=1;c.beginPath();c.arc(0,0,Math.max(2,r-4),0,TAU);c.stroke();
+    }
+    drawLogoOn(c,i,col,r);
   }
   // Yönetim paneli: saha topunun canlı önizlemesi (ölçek + logo + renk).
   function drawPreview(i,t){
@@ -1103,12 +1118,7 @@
     g.strokeStyle='rgba(214,255,229,.14)';g.lineWidth=1;g.beginPath();g.arc(C,C,22,0,TAU);g.stroke();
     g.fillStyle='rgba(214,255,229,.4)';g.beginPath();g.arc(C,C,1.6,0,TAU);g.fill();
     const col=teamColor(i), r=18*(settings.teams[i].scale||1);
-    g.save();g.translate(C,C);g.rotate(t*(i?0.7:-0.8));
-    g.shadowColor=col;g.shadowBlur=12*(r/18);
-    g.fillStyle=mix(col,'#0b2124',.78);g.strokeStyle=col;g.lineWidth=Math.max(1.4,2.2*(r/18));
-    g.beginPath();g.arc(0,0,r,0,TAU);g.fill();g.stroke();g.shadowBlur=0;
-    g.strokeStyle='#ffffff54';g.lineWidth=1;g.beginPath();g.arc(0,0,Math.max(2,r-4),0,TAU);g.stroke();
-    drawLogoOn(g,i,col,r);g.restore();
+    g.save();g.translate(C,C);g.rotate(t*(i?0.7:-0.8));drawBallArt(g,i,col,r,true);g.restore();
   }
   function drawPreviews(t){drawPreview(0,t);drawPreview(1,t);}
   function draw(t){
@@ -1153,9 +1163,7 @@
     for(const b of balls){
       const col=teamColor(b.id), r=ballR(b.id);
       for(let i=0;i<b.trail.length;i++){let p=b.trail[i];ctx.beginPath();ctx.fillStyle=rgba(col,i/b.trail.length*.16);ctx.arc(p.x,p.y,r*(.35+i/b.trail.length*.5),0,TAU);ctx.fill();}
-      ctx.save();ctx.translate(b.x,b.y);ctx.rotate(b.angle);ctx.shadowColor=col;ctx.shadowBlur=26*(r/BR);ctx.fillStyle=mix(col,'#0b2124',.78);ctx.strokeStyle=col;ctx.lineWidth=Math.max(1.6,2.5*(r/BR));ctx.beginPath();ctx.arc(0,0,r,0,TAU);ctx.fill();ctx.stroke();ctx.shadowBlur=0;
-      ctx.strokeStyle='#ffffff54';ctx.lineWidth=1;ctx.beginPath();ctx.arc(0,0,Math.max(2,r-4),0,TAU);ctx.stroke();
-      drawLogoOn(ctx,b.id,col,r);ctx.restore();
+      ctx.save();ctx.translate(b.x,b.y);ctx.rotate(b.angle);drawBallArt(ctx,b.id,col,r);ctx.restore();
     }
     for(const p of particles){ctx.globalAlpha=Math.max(0,p.life/p.max);ctx.fillStyle=p.color;ctx.fillRect(p.x,p.y,p.size,p.size);}ctx.globalAlpha=1;ctx.restore();
   }
@@ -1195,7 +1203,7 @@
       <div class="card-head"><span class="swatch"></span><h3>TAKIM ${i+1}</h3><span class="sub">${i===0?'Skor tablosunda sol':'Skor tablosunda sağ'}</span></div>
       <label class="field"><span>Takım adı</span><input type="text" data-role="name" maxlength="14" placeholder="TAKIM ${i+1}" autocomplete="off" spellcheck="false"></label>
       <div class="field"><span class="field-label">Renk</span><div class="color-row"><input type="color" data-role="color" aria-label="Takım rengi"><div class="presets">${PRESETS.map(c=>`<button type="button" class="preset" data-color="${c}" style="background:${c};color:${c}" aria-label="Renk ${c}"></button>`).join('')}</div></div></div>
-      <div class="field"><span class="field-label">Logo</span><div class="logo-grid">${opts}</div><div class="logo-help">Kendi logonu yüklersen top üzerinde ve skor tablosunda yuvarlak kırpılarak görünür.</div></div>
+      <div class="field"><span class="field-label">Logo</span><div class="logo-grid">${opts}</div><div class="logo-help">Yüklediğin logo kırpılmadan, en-boy oranı korunarak ve daire içine alınmadan gösterilir.</div></div>
       <div class="field scale-field"><span class="field-label">Sahadaki logo ölçeği</span>
         <div class="scale-block">
           <div class="preview-wrap">
@@ -1249,9 +1257,10 @@
       const f=fileIn.files&&fileIn.files[0];if(!f)return;
       const rd=new FileReader();
       rd.onload=()=>{const im=new Image();im.onload=()=>{
-        // 192px kare, "cover" kırpma — localStorage'a sığsın diye küçültülür.
-        const S=192,c=document.createElement('canvas');c.width=c.height=S;const g=c.getContext('2d');
-        const sc=Math.max(S/im.width,S/im.height),w=im.width*sc,h=im.height*sc;g.drawImage(im,(S-w)/2,(S-h)/2,w,h);
+        // En-boy oranını koru; kırpmadan yalnızca localStorage'a sığması için büyük görselleri küçült.
+        const MAX=192,sc=Math.min(1,MAX/Math.max(im.width,im.height)),c=document.createElement('canvas');
+        c.width=Math.max(1,Math.round(im.width*sc));c.height=Math.max(1,Math.round(im.height*sc));
+        const g=c.getContext('2d');g.drawImage(im,0,0,c.width,c.height);
         let data;try{data=c.toDataURL('image/png');}catch(e){data=rd.result;}
         T().image=data;T().logo='image';loadImage(i);commit();note('Logo yüklendi ✓',true);fileIn.value='';
       };im.onerror=()=>note('Görsel okunamadı, başka bir dosya dene.');im.src=rd.result;};
@@ -1326,10 +1335,9 @@
     for(let i=0;i<2;i++){
       const col=teamColor(i),bcx=i?275:125,scoreX=i?300:100;
       c.fillStyle=col;c.font='950 29px Inter, system-ui, sans-serif';c.textAlign=i?'left':'right';c.fillText(ui.scores[i].textContent,scoreX,sbY+sbH*.42);
-      c.textAlign='center';c.beginPath();c.arc(bcx,sbY+sbH*.42,15,0,TAU);c.fillStyle='#112c2c';c.fill();
-      c.strokeStyle=col;c.lineWidth=1;c.shadowColor=col;c.shadowBlur=10;c.stroke();c.shadowBlur=0;
-      const img=logoImgs[i];
-      if(img&&img.complete&&img.naturalWidth){c.save();c.beginPath();c.arc(bcx,sbY+sbH*.42,14,0,TAU);c.clip();c.drawImage(img,bcx-14,sbY+sbH*.42-14,28,28);c.restore();}
+      c.textAlign='center';const img=logoImgs[i],custom=settings.teams[i].logo==='image'&&img&&img.complete&&img.naturalWidth;
+      if(!custom){c.beginPath();c.arc(bcx,sbY+sbH*.42,15,0,TAU);c.fillStyle='#112c2c';c.fill();c.strokeStyle=col;c.lineWidth=1;c.shadowColor=col;c.shadowBlur=10;c.stroke();c.shadowBlur=0;}
+      if(custom)drawContainedImage(c,img,bcx,sbY+sbH*.42,28,28);
       else{c.fillStyle=col;c.font='950 14px Inter, system-ui, sans-serif';c.fillText(initial(i),bcx,sbY+sbH*.42+1);}
       c.fillStyle='#e8fff6';c.font='850 9px Inter, system-ui, sans-serif';c.fillText(ui.names[i].textContent,bcx,sbY+sbH*.82);
     }
