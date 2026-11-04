@@ -811,7 +811,9 @@
   function announceCard(key,id){const ev=RANDOM_EVENTS[key];cards[id][key]++;const detail=teamName(id)+' · '+(key==='yellow'?cards[id].yellow+'. SARI KART':cards[id].red+'. KIRMIZI KART');renderCards({id,key});ui.eventWord.textContent=ev.title;ui.eventIcon.textContent=ev.icon;ui.eventKicker.textContent=ev.kicker;ui.eventSub.textContent=detail;ui.eventBanner.style.setProperty('--event-color',ev.color);ui.eventBanner.style.setProperty('--event-glow',rgba(ev.color,.24));ui.eventBanner.classList.add('visible');eventFlash=settings.textTimes.event;eventStatus=ev.title+' · '+teamName(id);eventColor=ev.color;if(goalFlash<=0){ui.status.textContent=eventStatus;ui.status.style.color=eventColor;}const b=balls.find(x=>x.id===id&&x.inNet<=0);if(b){burst(b.x,b.y,ev.color,key==='red'?18:12);if(key==='red')shake=5;}}
   function varClearOverlay(){ui.overlay.classList.remove('visible','var-mode','var-valid','var-cancel','var-done');ui.overlay.style.removeProperty('--call-glow');ui.callSub.style.color='';}
   function directGoal(b){
-    const id=b.id,col=teamColor(id),name=teamName(id),m=matchMinute(),duration=settings.textTimes.varVerdict;
+    const id=b.id;
+    if(scores[id]>=MAX_GOALS||scores[0]+scores[1]>=matchGoalCap){b.inNet=0.1;goalCooldown=Math.max(goalCooldown,0.25);return;}
+    const col=teamColor(id),name=teamName(id),m=matchMinute(),duration=settings.textTimes.varVerdict;
     b.inNet=duration; // gol yazısı boyunca logo filelerin içinde kalır
     scores[id]++;ui.scores[id].textContent=scores[id];
     goalLog[id].push(m);renderGoals(goalLog[id].length-1);
@@ -825,7 +827,7 @@
     ui.callSub.textContent=name+' · '+m+'. DAKİKA';ui.callSub.style.color=col;
     ui.status.textContent=name+' GOL ATTI!';ui.status.style.color=col;
     shake=14;const mouth=goalMouth();burst(mouth.x,mouth.y,col,42);crowdCelebrate(id);
-    goalFlash=duration;goalCooldown=Math.max(0.55,duration+0.05);nextEventAt=Math.max(nextEventAt,elapsed+1.2); // gol yazisi paneldeki sure boyunca ekranda kalir
+    goalFlash=duration;actionPause=Math.max(actionPause,duration);goalCooldown=Math.max(0.55,duration+0.05);nextEventAt=Math.max(nextEventAt,elapsed+1.2); // gol anında iki takım da durur; sonra toplar ortadan başlar
   }
   function startVAR(b){
     if(varCount>=matchVarCap){directGoal(b);return;}
@@ -1013,7 +1015,7 @@
     if(elapsed>=hd&&wasHalf===0){whistle(1);crowdBoost[0]=Math.max(crowdBoost[0],1.0);crowdBoost[1]=Math.max(crowdBoost[1],1.0);ui.status.textContent='İLK YARI BİTTİ — İKİNCİ YARI BAŞLIYOR!';ui.status.style.color='';if(!varState){const halfTime=settings.textTimes.half;showWhistleCard('İLK YARI BİTTİ',scoreLine(),'DEVRE ARASI','İLK YARI<br>BİTTİ');goalFlash=halfTime;actionPause=Math.max(actionPause,halfTime);}} // devre arasi yazisi paneldeki sure boyunca kalir
     goalCooldown=Math.max(0,goalCooldown-dt);goalFlash=Math.max(0,goalFlash-dt);eventFlash=Math.max(0,eventFlash-dt);actionPause=Math.max(0,actionPause-dt);shake=Math.max(0,shake-dt*35);
     const sm=spdMul();
-    // Gol modu açık mı? (kota/VAR/cooldown/son saniye) — kapalıyken toplar kaleye YAKLAŞMAZ.
+    // Gol modu açık mı? (kota/VAR/cooldown) — kapalıyken toplar kaleye YAKLAŞMAZ.
     const goalOpen=!varState&&goalCooldown<=0&&scores[0]+scores[1]<matchGoalCap;
     const frozen=actionPause>0; // aksiyon duraklaması: hareket ve çarpışma durur
     // Kale çemberin çizgisi üzerinde dönsün; hız kademeye göre ölçeklenir
@@ -1038,9 +1040,9 @@
     for(const b of balls){
       // Fileye giren logo, paneldeki yazı süresi dolunca oyuna devam eder.
       if(b.inNet>0){
-        b.inNet-=dt;netPhysics(b,dt);
+        b.inNet=Math.max(0,b.inNet-dt);netPhysics(b,dt);
         b.trail.push({x:b.x,y:b.y});if(b.trail.length>11)b.trail.shift();
-        if(b.inNet<=0){if(varState)b.inNet=.25;else scored=true;} // VAR bitene kadar logo filede kalır; aksi hâlde gol sonrası iki top yeniden başlar
+        if(b.inNet<=0.000001){b.inNet=0;if(varState)b.inNet=.25;else scored=true;} // VAR bitene kadar logo filede kalır; aksi hâlde gol sonrası iki top yeniden başlar
         continue;
       }
       if(frozen)continue; // aksiyon durdu: serbest top hareket etmez, çarpışma olmaz
