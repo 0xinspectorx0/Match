@@ -224,6 +224,8 @@
   .goal-odd b { color:#e9fff4; font-size:11px; font-weight:950; font-variant-numeric:tabular-nums; }
   .goal-odd small { color:#8be8bf; font-size:9px; font-weight:900; }
   .goal-odds p { margin:8px 0 0; color:#8fb3a6; font-size:9px; line-height:1.4; }
+  .goal-range-field { margin:10px 0 0; }
+  .goal-range-field input { text-align:center; font-variant-numeric:tabular-nums; }
   .check { display:flex; align-items:flex-start; gap:10px; font-size:12px; line-height:1.4; color:#cfe6da; cursor:pointer; }
   .check input { margin:2px 0 0; accent-color:#9ce9bb; flex:none; }
   .check small { display:block; color:#8fb3a6; font-size:10.5px; margin-top:3px; }
@@ -301,7 +303,7 @@
   </header>
   <div class="admin-body" id="adminBody">
     <section class="card">
-      <div class="card-head"><h3>MAÇ AYARLARI</h3><span class="sub">GOL ≤6 · 🟨 ≤6 · 🟥 ≤2</span></div>
+      <div class="card-head"><h3>MAÇ AYARLARI</h3><span class="sub">TOPLAM GOL ≤12 · TAKIM ≤6</span></div>
       <div class="field">
         <div class="field-head-row"><span class="field-label">Maçın gerçek süresi</span><span class="range-val" id="durationVal">60 sn (Yarı: 30 sn)</span></div>
         <div class="range-row"><input type="range" id="duration" min="10" max="180" step="5" aria-label="Maçın gerçek süresi (sn)"></div>
@@ -329,15 +331,10 @@
           <button type="button" data-v="10" title="10x hız">10x</button>
         </div>
       </div>
-      <div class="goal-odds" aria-label="Maç toplam gol olasılıkları">
-        <div class="goal-odds-head"><span>GOL DAĞILIMI · MAÇ TOPLAMI</span><span>AZALAN İHTİMAL</span></div>
-        <div class="goal-odds-grid">
-          <div class="goal-odd"><b>0–3</b><small>%70</small></div>
-          <div class="goal-odd"><b>2–3</b><small>%15</small></div>
-          <div class="goal-odd"><b>3–4</b><small>%10</small></div>
-          <div class="goal-odd"><b>4–6</b><small>%5</small></div>
-        </div>
-        <p>Maç başında profillerden biri bu ağırlıklarla seçilir. Aralık içindeki düşük skorlar daha olasıdır; toplam gol sayısı seçilen hedefi aşmaz.</p>
+      <div class="goal-odds" aria-label="Maç toplam gol aralığı">
+        <div class="goal-odds-head"><span>TOPLAM GOL ARALIĞI</span><span>0–12</span></div>
+        <label class="field goal-range-field"><span>İki takımın toplam golü</span><input type="text" id="goalRange" maxlength="7" placeholder="0-6" autocomplete="off" spellcheck="false" aria-label="Toplam gol aralığı, örneğin 1-5"></label>
+        <p>Tek sayı <b>5</b> için 0–5, aralık <b>1-5</b> için 1–5 gol hedefi rastgele seçilir. Takım skorları rastgele oluşur; 5-0 veya 1-1 gibi sonuçlar mümkündür. Seçilen toplam tamamlanmadan maç bitmez. Yeni aralık sonraki maçta uygulanır.</p>
       </div>
     </section>
     <section class="card">
@@ -385,7 +382,7 @@
 
   const DEFAULTS={
     teams:[{name:'ALEV',color:'#ff8758',logo:'flame',image:null,scale:1},{name:'ŞİMŞEK',color:'#6ce5e5',logo:'bolt',image:null,scale:1}],
-    duration:60, speed:1, cardPlan:{y0:1,r0:0,y1:1,r1:0}, textTimes:{varCheck:0.5,varVerdict:0.5,event:0.5,half:0.5}, title1:'BİR ÇEMBER.', title2:'DÖNEN KALE.', hideButton:false
+    duration:60, speed:1, cardPlan:{y0:1,r0:0,y1:1,r1:0}, goalRange:{min:0,max:6}, textTimes:{varCheck:0.5,varVerdict:0.5,event:0.5,half:0.5}, title1:'BİR ÇEMBER.', title2:'DÖNEN KALE.', hideButton:false
   };
   const ICONS={
     flame:{label:'Alev',d:'M12.6 1.5c.6 4.3-2.4 5.7-1.1 8.2 2.1-.8 3.2-2.4 3.4-4.2 3.7 3.1 5.4 6.7 5.1 9.8-.4 4.5-3.6 7.4-8 7.4s-7.6-2.9-8-7.3C3.7 11.6 6.3 7.9 12.6 1.5Zm-.4 11.6c-2.1 2.7-3.4 4-3.1 6 .2 1.7 1.3 2.7 2.9 2.7s2.9-1.2 3-2.8c.1-1.4-.8-2.6-2.8-5.9Z'},
@@ -402,6 +399,16 @@
   const clone=o=>JSON.parse(JSON.stringify(o));
   const isHex=c=>typeof c==='string'&&/^#[0-9a-f]{6}$/i.test(c);
   function clampTextTime(v,fallback=0.5){v=Number(v);if(!Number.isFinite(v))v=fallback;return Math.min(10,Math.max(0.1,Math.round(v*10)/10));}
+  function parseGoalRange(value){
+    let min,max;
+    if(value&&typeof value==='object'){min=Number(value.min);max=Number(value.max);}
+    else{
+      const m=String(value??'').trim().match(/^(\d{1,2})(?:\s*[-–—]\s*(\d{1,2}))?$/);if(!m)return null;
+      if(m[2]===undefined){min=0;max=Number(m[1]);}else{min=Number(m[1]);max=Number(m[2]);}
+    }
+    if(!Number.isInteger(min)||!Number.isInteger(max)||min<0||max>12||min>max)return null;
+    return {min,max};
+  }
   function sanitize(s){
     s.teams=s.teams.slice(0,2).map((t,i)=>{
       const d=DEFAULTS.teams[i]; t=Object.assign({},d,t||{});
@@ -416,6 +423,7 @@
     s.duration=Math.min(180,Math.max(10,Math.round((+s.duration||60)/5)*5));
     if(s.speed===undefined&&s.goalSpeed!==undefined){s.speed=+s.goalSpeed<=0.7?1:(+s.goalSpeed>=1.5?4:3);}
     s.speed=(+s.speed>=1&&+s.speed<=10&&Number.isInteger(+s.speed))?+s.speed:1;
+    s.goalRange=parseGoalRange(s.goalRange)||clone(DEFAULTS.goalRange);
     const times=s.textTimes&&typeof s.textTimes==='object'?s.textTimes:{};s.textTimes={};
     Object.keys(DEFAULTS.textTimes).forEach(k=>s.textTimes[k]=clampTextTime(times[k],DEFAULTS.textTimes[k]));
     s.title1=String(s.title1??DEFAULTS.title1).slice(0,18); s.title2=String(s.title2??DEFAULTS.title2).slice(0,18);
@@ -473,15 +481,8 @@
   let goalAngle=-Math.PI/2; // kale çemberin çizgisi üzerinde bu açıda durur ve döner
   const DUR=()=>settings.duration;
   function rand(a,b){return a+Math.random()*(b-a)}
-  // Bu yüzdeler her maçta bir toplam-gol profili seçer; aralık içinde düşük skorlar daha ağırlıklıdır.
-  const GOAL_PROFILES=[
-    {weight:70, scores:[[0,42],[1,40],[2,12],[3,6]]},
-    {weight:15, scores:[[2,95],[3,5]]},
-    {weight:10, scores:[[3,80],[4,20]]},
-    {weight:5, scores:[[4,70],[5,20],[6,10]]}
-  ];
-  function weightedPick(items){let r=Math.random()*items.reduce((sum,item)=>sum+item[1],0);for(const [value,weight] of items){r-=weight;if(r<0)return value;}return items[items.length-1][0];}
-  function rollMatchGoalCap(){const profile=weightedPick(GOAL_PROFILES.map((p,i)=>[i,p.weight]));return weightedPick(GOAL_PROFILES[profile].scores);}
+  // Toplam gol hedefi, yönetim panelindeki minimum ve maksimum değerler arasından rastgele seçilir.
+  function rollMatchGoalCap(){const r=settings.goalRange;return Math.floor(rand(r.min,r.max+1));}
   function norm(a){while(a>Math.PI)a-=TAU;while(a<-Math.PI)a+=TAU;return a}
   function fmt(s){s=Math.max(0,Math.ceil(s));return String(Math.floor(s/60)).padStart(2,'0')+':'+String(s%60).padStart(2,'0');}
   function makeBall(id,axis,curve){
@@ -827,7 +828,7 @@
   }
   function startVAR(b){
     const id=b.id,check=settings.textTimes.varCheck,verdict=settings.textTimes.varVerdict;
-    varState={id,t:0,phase:'check',check,verdict,minute:matchMinute(),valid:Math.random()<VAR.chance,reason:VAR.reasons[Math.floor(Math.random()*VAR.reasons.length)]};
+    varState={id,t:0,phase:'check',check,verdict,minute:matchMinute(),valid:elapsed>=DUR()||Math.random()<VAR.chance,reason:VAR.reasons[Math.floor(Math.random()*VAR.reasons.length)]};
     b.inNet=check+verdict+0.15; // inceleme boyunca logo fileden çıkmaz
     eventFlash=0;
     ui.eventBanner.classList.remove('visible');ui.eventBanner.style.removeProperty('--event-color');ui.eventBanner.style.removeProperty('--event-glow');
@@ -1010,7 +1011,7 @@
     goalCooldown=Math.max(0,goalCooldown-dt);goalFlash=Math.max(0,goalFlash-dt);eventFlash=Math.max(0,eventFlash-dt);actionPause=Math.max(0,actionPause-dt);shake=Math.max(0,shake-dt*35);
     const sm=spdMul();
     // Gol modu açık mı? (kota/VAR/cooldown/son saniye) — kapalıyken toplar kaleye YAKLAŞMAZ.
-    const goalOpen=!varState&&goalCooldown<=0&&elapsed<DUR()-1.6&&scores[0]+scores[1]<matchGoalCap;
+    const goalOpen=!varState&&goalCooldown<=0&&scores[0]+scores[1]<matchGoalCap;
     const frozen=actionPause>0; // aksiyon duraklaması: hareket ve çarpışma durur
     // Kale çemberin çizgisi üzerinde dönsün; hız kademeye göre ölçeklenir
     goalAngle+=(0.42+0.20*Math.sin(elapsed*0.35))*sm*dt;
@@ -1083,7 +1084,7 @@
     if(scored)balls=makeBallPair(); // gol sonrası hic beklemeden orta sahadan devam
     hitCool=Math.max(0,hitCool-outerDt);
     particles=particles.filter(p=>p.life>0);for(const p of particles){p.x+=p.vx*dt;p.y+=p.vy*dt;p.vy+=75*dt;p.life-=dt;}
-    if(elapsed>=DUR()){finished=true;if(recording)stopRec();whistle(2);if(scores[0]!==scores[1]){const w=scores[0]>scores[1]?0:1;crowdBoost[w]=2.0;punchChant(w,'chant');}else{crowdBoost[0]=0.85;crowdBoost[1]=0.85;}goalFlash=0;eventFlash=0;varState=null;varClearOverlay();ui.eventBanner.classList.remove('visible');ui.eventBanner.style.removeProperty('--event-color');ui.eventBanner.style.removeProperty('--event-glow');ui.status.style.color='';ui.status.textContent=scores[0]===scores[1]?'BERABERE!':'KAZANAN: '+teamName(scores[0]>scores[1]?0:1)+'!';showWhistleCard('MAÇ SONU','','FİNAL DÜDÜĞÜ');ui.play.innerHTML='▶ &nbsp; TEKRAR OYNA';} // final düdüğü/maç sonu kartında alt yazı yok
+    if(elapsed>=DUR()&&scores[0]+scores[1]>=matchGoalCap){finished=true;if(recording)stopRec();whistle(2);if(scores[0]!==scores[1]){const w=scores[0]>scores[1]?0:1;crowdBoost[w]=2.0;punchChant(w,'chant');}else{crowdBoost[0]=0.85;crowdBoost[1]=0.85;}goalFlash=0;eventFlash=0;varState=null;varClearOverlay();ui.eventBanner.classList.remove('visible');ui.eventBanner.style.removeProperty('--event-color');ui.eventBanner.style.removeProperty('--event-glow');ui.status.style.color='';ui.status.textContent=scores[0]===scores[1]?'BERABERE!':'KAZANAN: '+teamName(scores[0]>scores[1]?0:1)+'!';showWhistleCard('MAÇ SONU','','FİNAL DÜDÜĞÜ');ui.play.innerHTML='▶ &nbsp; TEKRAR OYNA';} // final düdüğü/maç sonu kartında alt yazı yok
   }
   function line(x1,y1,x2,y2,color,width=1){ctx.strokeStyle=color;ctx.lineWidth=width;ctx.beginPath();ctx.moveTo(x1,y1);ctx.lineTo(x2,y2);ctx.stroke();}
   // Yüklenen görseller kırpılmaz: en-boy oranı korunur ve dairesel top zemini çizilmez.
@@ -1278,6 +1279,13 @@
   durIn.addEventListener('input',()=>{settings.duration=+durIn.value;updateDurUI();applyLive();save();});
   durPresetBtns.forEach(b=>b.addEventListener('click',()=>{settings.duration=+b.dataset.dur;updateDurUI();applyLive();save();}));
 
+  const goalRangeIn=$('goalRange');
+  function updateGoalRangeUI(){goalRangeIn.value=settings.goalRange.min+'-'+settings.goalRange.max;}
+  goalRangeIn.addEventListener('change',()=>{
+    const range=parseGoalRange(goalRangeIn.value);if(!range){updateGoalRangeUI();note('Geçerli bir aralık gir: 5 veya 1-5 (en fazla 12).');return;}
+    settings.goalRange=range;updateGoalRangeUI();save();note('Toplam gol aralığı sonraki maç için kaydedildi.',true);
+  });
+
   const speedSeg=$('speedSeg'), speedVal=$('speedVal');
   const segBtns=[...speedSeg.querySelectorAll('button')];
   function updateSpeedUI(){
@@ -1304,7 +1312,7 @@
   const hideIn=$('hideBtn');
   hideIn.addEventListener('change',()=>{settings.hideButton=hideIn.checked;applyLive();save();if(hideIn.checked)note('Düğme gizlendi. Paneli açmak için Y tuşu ya da sahneye çift tık.',true);});
 
-  function refreshAll(){refreshers.forEach(fn=>fn());updateDurUI();updateSpeedUI();updateTextTimeUI();updateCardUI();hideIn.checked=settings.hideButton;}
+  function refreshAll(){refreshers.forEach(fn=>fn());updateDurUI();updateGoalRangeUI();updateSpeedUI();updateTextTimeUI();updateCardUI();hideIn.checked=settings.hideButton;}
 
   // Uygula & yeniden başlat
   $('applyBtn').addEventListener('click',()=>{clearTimeout(saveTimer);try{localStorage.setItem(STORE_KEY,JSON.stringify(settings));}catch(e){}applyLive();reset();closePanel();beginNow();});
