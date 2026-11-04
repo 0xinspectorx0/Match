@@ -1004,7 +1004,8 @@
   function update(dt){
     if(paused||finished)return;
     const hd=DUR()/2,wasHalf=elapsed>=hd?1:0;
-    elapsed=Math.min(DUR(),elapsed+dt);syncUI();updateCrowd(dt);
+    // VAR kontrolü ve kararı sürerken maç saati durur; VAR'ın kendi süresi aşağıda işlemeye devam eder.
+    if(!varState)elapsed=Math.min(DUR(),elapsed+dt);syncUI();updateCrowd(dt);
     if(elapsed>=hd&&wasHalf===0){whistle(1);crowdBoost[0]=Math.max(crowdBoost[0],1.0);crowdBoost[1]=Math.max(crowdBoost[1],1.0);ui.status.textContent='İLK YARI BİTTİ — İKİNCİ YARI BAŞLIYOR!';ui.status.style.color='';if(!varState){const halfTime=settings.textTimes.half;showWhistleCard('İLK YARI BİTTİ',scoreLine(),'DEVRE ARASI','İLK YARI<br>BİTTİ');goalFlash=halfTime;actionPause=Math.max(actionPause,halfTime);}} // devre arasi yazisi paneldeki sure boyunca kalir
     goalCooldown=Math.max(0,goalCooldown-dt);goalFlash=Math.max(0,goalFlash-dt);eventFlash=Math.max(0,eventFlash-dt);actionPause=Math.max(0,actionPause-dt);shake=Math.max(0,shake-dt*35);
     const sm=spdMul();
