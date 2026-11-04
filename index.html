@@ -794,7 +794,7 @@
       const b=balls.find(x=>x.id===id&&x.inNet<=0);
       if(b){burst(b.x,b.y,ev.color,key==='penalty'?18:12);
         if(key==='offside'){b.vx*=-.72;b.vy*=-.72;}
-        else if(key==='penalty'){const m=goalMouth(),dx=m.x-b.x,dy=m.y-b.y,d=Math.hypot(dx,dy)||1;b.vx=dx/d*148*spdMul();b.vy=dy/d*148*spdMul();}
+        else if(key==='penalty'&&scores[0]+scores[1]<matchGoalCap){const m=goalMouth(),dx=m.x-b.x,dy=m.y-b.y,d=Math.hypot(dx,dy)||1;b.vx=dx/d*148*spdMul();b.vy=dy/d*148*spdMul();}
         else if(key==='foul'){b.vx*=.62;b.vy*=.62;}
       }
     }
@@ -920,6 +920,14 @@
     b.seekWall=false; // Bu logo duvardan sekti; iki logo da sekince yeniden birbirlerini ararlar.
     if(vn>170*spdMul()&&Math.random()<.5)burst(b.x,b.y,teamColor(b.id),3);
   }
+  function steerFromClosedGoal(b,dt,sm,r){
+    const ca=Math.cos(goalAngle),sa=Math.sin(goalAngle),dx=b.x-CX,dy=b.y-CY,d=Math.hypot(dx,dy)||1;
+    const lx=dx*ca+dy*sa,ly=-dx*sa+dy*ca;if(lx<0||d<R*.45||Math.abs(ly)>GW+r+26)return;
+    const near=Math.max(0,Math.min(1,(d-R*.45)/(R*.45))),side=Math.abs(ly)>1?Math.sign(ly):(b.id?1:-1);
+    const tx=-sa*side,ty=ca*side,tangent=b.vx*tx+b.vy*ty,desired=125*sm*near;
+    if(tangent<desired){const push=(desired-tangent)*Math.min(1,8*dt);b.vx+=tx*push;b.vy+=ty*push;}
+    const outward=b.vx*ca+b.vy*sa;if(outward>0){const brake=Math.min(1,(4+8*near)*dt);b.vx-=ca*outward*brake;b.vy-=sa*outward*brake;}
+  }
   function enforceBounceCycle(dt,sm,goalOpen){
     if(balls.length!==2)return;
     const a=balls[0],b=balls[1];if(a.inNet>0||b.inNet>0)return;
@@ -929,8 +937,8 @@
       for(const q of balls){
         if(!q.seekWall)continue;
         let dx=q.x-CX,dy=q.y-CY,d=Math.hypot(dx,dy)||1,ang=Math.atan2(dy,dx);
-        // Kale yönü her zaman serbest: ağıza giden top sekmez, gol olur.
-
+        // Kapalı kale sektöründe dışa yönelme uygulanmaz; top yalnızca başka yönlerde çembere gider.
+        if(!goalOpen){const ca=Math.cos(goalAngle),sa=Math.sin(goalAngle),lx=dx*ca+dy*sa,ly=-dx*sa+dy*ca;if(lx>=0&&Math.abs(ly)<=GW+ballR(q.id)+26)continue;}
         const nx=Math.cos(ang),ny=Math.sin(ang);
         const radial=q.vx*nx+q.vy*ny,target=130*sm;
         if(radial<target){const push=(target-radial)*alpha;q.vx+=nx*push;q.vy+=ny*push;}
@@ -997,8 +1005,8 @@
      GOL KURALLARI (uygulama sırası ile)
      1. Top çember çizgisine değince (d >= R - r) temas kontrolü başlar.
      2. Kale ağzı koordinatı hesaplanır: |ly| <= GW + r*0.9 ise top kale ağzının içindedir.
-     3. Top dışa doğru gidiyorsa ve VAR sür請miyorsa → gol adayıdır.
-     4. Ağıza temas (|ly| <= GW + r*0.9): top ASLA SEKMEZ — VAR hakkı varsa incelemeye, yoksa direkt gole gider.
+     3. Yalnızca goalOpen açıkken top kaleye yönelir ve gol adayı olabilir.
+     4. Gol açıkken ağıza temas topu VAR'a veya direkt gole götürür; gol kapalıysa top kale çizgisine varmadan geri seker.
      5. Her maç rastgele 0–3 VAR hakkı vardır. VAR: önce 'check', sonra 'verdict'; %66 (VAR.chance) geçerli → gol sayılır,
         aksi hâlde iptal edilir (sebep: OFSAYT). Kota dolduysa (takım MAX_GOALS=6 veya matchGoalCap) geçerli gol bile iptal edilir.
      7. Gol sayılınca: skor +1, gol loguna dakika yazılır, ortada GOL! kartı + tribün kutlaması çıkar;
@@ -1050,9 +1058,9 @@
       let turn=rand(-1,1)*1.8*sm*dt,cs=Math.cos(turn),sn=Math.sin(turn),vx=b.vx;
       b.vx=vx*cs-b.vy*sn;b.vy=vx*sn+b.vy*cs;
 
-      // Kale her zaman hedef: top kaleye giderse geri itilmez, ağıza temas gol sayılır.
-      let m=goalMouth();
-      b.vx+=(m.x-b.x)*0.62*sm*dt;b.vy+=(m.y-b.y)*0.62*sm*dt;
+      // Yalnızca gol mümkünken kale çekimi uygulanır; kapalı kalede top bölgeden uzaklaştırılır.
+      if(goalOpen){const m=goalMouth();b.vx+=(m.x-b.x)*0.62*sm*dt;b.vy+=(m.y-b.y)*0.62*sm*dt;}
+      else steerFromClosedGoal(b,dt,sm,ballR(b.id));
 
       // Hız düzenleme YUMUŞAK: çarpışmadan gelen ekstra hız sürtünmeyle yavaş söner, yavaşlayan logo kendi "motoru" ile toparlanır
       let speed=Math.hypot(b.vx,b.vy)||1;
@@ -1063,22 +1071,25 @@
       const baseSpin=(b.id?2.2:-2.5)*sm;b.spin+=(baseSpin-b.spin)*Math.min(1,0.9*sm*dt); // dönme de yavaşça doğal hızına döner
       b.x+=b.vx*dt;b.y+=b.vy*dt;b.angle+=b.spin*dt;
       let r=ballR(b.id), dx=b.x-CX,dy=b.y-CY,d=Math.hypot(dx,dy);
-      if(d>=R-r){
+      if(d>=R-r-6){
         let ca=Math.cos(goalAngle),sa=Math.sin(goalAngle);
-        let ly=-dx*sa+dy*ca; // kale ağzı koordinatı (teğet yön): direkler arası temas her zaman gol
-        let inMouth=Math.abs(ly)<=GW+r*0.9;
-        if(!varState&&inMouth){
-          // AĞIZA GELEN TOP ASLA SEKMEZ: VAR hakkı varsa incelenir, hak bittiyse direkt gol olur.
-          startVAR(b);
-          continue;
-        }else{
-          let nx=dx/d,ny=dy/d;
-          // Sınırın biraz içine yerleştir: kayan nokta hataları ve tekrar tekrar temas algısı oluşmasın.
-          b.x=CX+nx*(R-r-0.9);b.y=CY+ny*(R-r-0.9);
-          let dot=b.vx*nx+b.vy*ny;
-          if(dot>0){wallBounce(b,nx,ny,dot,r);}
-          else if(dot>-PHYS.minWallExit*sm){
-            const kick=dot+PHYS.minWallExit*sm;b.vx-=nx*kick;b.vy-=ny*kick;b.seekWall=false;
+        let ly=-dx*sa+dy*ca,inMouth=Math.abs(ly)<=GW+r*0.9;
+        // Gol kapalıyken kale ağzı ve direk çevresinde çizgiye varmadan önce geri sek.
+        const closedGuard=!goalOpen&&Math.abs(ly)<=GW+r*0.9+10,boundary=R-r-(closedGuard?6:0);
+        if(d>=boundary){
+          if(goalOpen&&!varState&&inMouth){
+            // AĞIZA GELEN TOP ASLA SEKMEZ: VAR hakkı varsa incelenir, hak bittiyse direkt gol olur.
+            startVAR(b);
+            continue;
+          }else{
+            let nx=dx/d,ny=dy/d;
+            // Sınırın biraz içine yerleştir: kayan nokta hataları ve tekrar tekrar temas algısı oluşmasın.
+            b.x=CX+nx*(boundary-0.9);b.y=CY+ny*(boundary-0.9);
+            let dot=b.vx*nx+b.vy*ny;
+            if(dot>0){wallBounce(b,nx,ny,dot,r);}
+            else if(dot>-PHYS.minWallExit*sm){
+              const kick=dot+PHYS.minWallExit*sm;b.vx-=nx*kick;b.vy-=ny*kick;b.seekWall=false;
+            }
           }
         }
       }
