@@ -348,9 +348,9 @@
       <div class="card-note duration-note"><b id="varTotal">VAR + karar: 1 sn</b><br>Süreler yeni gösterilecek yazılar için uygulanır. Maç sonu yazısı yeniden başlatana kadar ekranda kalır.</div>
     </section>
     <section class="card">
-      <div class="card-head"><h3>KARTLAR</h3><span class="sub">🟨 ≤6 · 🟥 ≤2 · 0 = kartsız</span></div>
-      <div class="card-team-row"><span class="dot" id="cardDot0"></span><span class="tname" id="cardTeam0">TAKIM 1</span><label class="numwrap" title="Sarı kart sayısı"><small>🟨</small><input type="number" class="num" id="cy0" min="0" max="6" step="1" inputmode="numeric" aria-label="Takım 1 sarı kart"></label><label class="numwrap" title="Kırmızı kart sayısı"><small>🟥</small><input type="number" class="num" id="cr0" min="0" max="2" step="1" inputmode="numeric" aria-label="Takım 1 kırmızı kart"></label></div>
-      <div class="card-team-row"><span class="dot" id="cardDot1"></span><span class="tname" id="cardTeam1">TAKIM 2</span><label class="numwrap" title="Sarı kart sayısı"><small>🟨</small><input type="number" class="num" id="cy1" min="0" max="6" step="1" inputmode="numeric" aria-label="Takım 2 sarı kart"></label><label class="numwrap" title="Kırmızı kart sayısı"><small>🟥</small><input type="number" class="num" id="cr1" min="0" max="2" step="1" inputmode="numeric" aria-label="Takım 2 kırmızı kart"></label></div>
+      <div class="card-head"><h3>KARTLAR</h3><span class="sub">🟨 ≤3 · 🟥 ≤2 · 0 = kartsız</span></div>
+      <div class="card-team-row"><span class="dot" id="cardDot0"></span><span class="tname" id="cardTeam0">TAKIM 1</span><label class="numwrap" title="Sarı kart sayısı"><small>🟨</small><input type="number" class="num" id="cy0" min="0" max="3" step="1" inputmode="numeric" aria-label="Takım 1 sarı kart"></label><label class="numwrap" title="Kırmızı kart sayısı"><small>🟥</small><input type="number" class="num" id="cr0" min="0" max="2" step="1" inputmode="numeric" aria-label="Takım 1 kırmızı kart"></label></div>
+      <div class="card-team-row"><span class="dot" id="cardDot1"></span><span class="tname" id="cardTeam1">TAKIM 2</span><label class="numwrap" title="Sarı kart sayısı"><small>🟨</small><input type="number" class="num" id="cy1" min="0" max="3" step="1" inputmode="numeric" aria-label="Takım 2 sarı kart"></label><label class="numwrap" title="Kırmızı kart sayısı"><small>🟥</small><input type="number" class="num" id="cr1" min="0" max="2" step="1" inputmode="numeric" aria-label="Takım 2 kırmızı kart"></label></div>
       <div class="card-note">Kartlar maç içinde rastgele dakikalarda gösterilir. Hepsini 0 yaparsan maç kartsız oynanır.</div>
     </section>
     <section class="card">
@@ -436,7 +436,7 @@
   }
   let settings=load();
   settings.cardPlan=(settings.cardPlan&&typeof settings.cardPlan==='object')?settings.cardPlan:{};
-  ['y0','y1'].forEach(k=>settings.cardPlan[k]=clampCard(settings.cardPlan[k],6));
+  ['y0','y1'].forEach(k=>settings.cardPlan[k]=clampCard(settings.cardPlan[k],3));
   ['r0','r1'].forEach(k=>settings.cardPlan[k]=clampCard(settings.cardPlan[k],2));
   let saveTimer=0, noteTimer=0;
   const NOTE_DEFAULT='Değişiklikler anında uygulanır ve bu tarayıcıda saklanır.';
@@ -474,15 +474,16 @@
   const GW=R*Math.sin(HALF_GAP), PX=R*Math.cos(HALF_GAP), BX=R+NET, POST=7;
   // Tek parça U çerçeve: iki dikdörtgen direk + direklerin ucuna tam oturan üst direk (çıkıntı yok).
   function framePath(){ctx.beginPath();ctx.moveTo(PX,-GW-POST/2);ctx.lineTo(BX,-GW-POST/2);ctx.lineTo(BX,GW+POST/2);ctx.lineTo(PX,GW+POST/2);ctx.lineTo(PX,GW-POST/2);ctx.lineTo(BX-POST,GW-POST/2);ctx.lineTo(BX-POST,-GW+POST/2);ctx.lineTo(PX,-GW+POST/2);ctx.closePath();}
-  let balls=[],particles=[],elapsed=0,paused=false,finished=false,goalFlash=0,eventFlash=0,last=0,shake=0,goalCooldown=0,actionPause=0,scores=[0,0],matchGoalCap=0;
+  let balls=[],particles=[],elapsed=0,paused=false,finished=false,goalFlash=0,eventFlash=0,last=0,shake=0,goalCooldown=0,actionPause=0,scores=[0,0],matchGoalCap=0,varCount=0,matchVarCap=0;
   let eventDeck=[],nextEventAt=0,eventStatus='',eventColor='',cards=[{yellow:0,red:0},{yellow:0,red:0}],cardPlan=[];
-  const MAX_GOALS=6, CARD_CAPS={yellow:6,red:2}; // takım başına üst sınırlar
+  const MAX_GOALS=6, CARD_CAPS={yellow:3,red:2}; // takım başına üst sınırlar
   let goalLog=[[],[]]; // takım başına atılan gollerin maç dakikaları
   let goalAngle=-Math.PI/2; // kale çemberin çizgisi üzerinde bu açıda durur ve döner
   const DUR=()=>settings.duration;
   function rand(a,b){return a+Math.random()*(b-a)}
   // Toplam gol hedefi, yönetim panelindeki minimum ve maksimum değerler arasından rastgele seçilir.
   function rollMatchGoalCap(){const r=settings.goalRange;return Math.floor(rand(r.min,r.max+1));}
+  function rollMatchVarCap(){return Math.floor(rand(0,4));} // her maç rastgele 0–3 VAR hakkı
   function norm(a){while(a>Math.PI)a-=TAU;while(a<-Math.PI)a+=TAU;return a}
   function fmt(s){s=Math.max(0,Math.ceil(s));return String(Math.floor(s/60)).padStart(2,'0')+':'+String(s%60).padStart(2,'0');}
   function makeBall(id,axis,curve){
@@ -731,7 +732,7 @@
     else el.innerHTML=iconSvg(t.logo);}
   // Ayarları sahneye anında yansıt (maçı bozmadan).
   function applyLive(){for(let i=0;i<2;i++){ui.names[i].textContent=teamName(i);renderBadge(i);}renderGoals();document.body.classList.toggle('hide-admin-btn',settings.hideButton);syncUI();drawPreviews((typeof performance!=='undefined'?performance.now():0)/1000);}
-  function reset(){varState=null;balls=makeBallPair();particles=[];elapsed=0;paused=false;finished=false;goalFlash=0;eventFlash=0;goalCooldown=0;actionPause=0;scores=[0,0];matchGoalCap=rollMatchGoalCap();cards=[{yellow:0,red:0},{yellow:0,red:0}];goalLog=[[],[]];eventDeck=[];nextEventAt=rand(1.1,1.8);rebuildCardPlan(0);spawnCrowd();eventStatus='';eventColor='';goalAngle=-Math.PI/2;ui.scores.forEach(e=>e.textContent='0');ui.status.textContent='İLK GOLÜ KİM ATACAK?';ui.status.style.color='';varClearOverlay();ui.eventBanner.classList.remove('visible');ui.eventBanner.style.removeProperty('--event-color');ui.eventBanner.style.removeProperty('--event-glow');ui.word.style.fontSize='';ui.word.style.lineHeight='';ui.word.textContent='GOL!';ui.word.style.color='';ui.callKicker.textContent='GOL ANI';ui.callIcon.textContent='⚽';ui.callSub.textContent='';ui.callSub.style.color='';ui.play.innerHTML='⏸ &nbsp; DURAKLAT';renderCards();renderGoals();syncUI();}
+  function reset(){varState=null;balls=makeBallPair();particles=[];elapsed=0;paused=false;finished=false;goalFlash=0;eventFlash=0;goalCooldown=0;actionPause=0;scores=[0,0];matchGoalCap=rollMatchGoalCap();varCount=0;matchVarCap=rollMatchVarCap();cards=[{yellow:0,red:0},{yellow:0,red:0}];goalLog=[[],[]];eventDeck=[];nextEventAt=rand(1.1,1.8);rebuildCardPlan(0);spawnCrowd();eventStatus='';eventColor='';goalAngle=-Math.PI/2;ui.scores.forEach(e=>e.textContent='0');ui.status.textContent='İLK GOLÜ KİM ATACAK?';ui.status.style.color='';varClearOverlay();ui.eventBanner.classList.remove('visible');ui.eventBanner.style.removeProperty('--event-color');ui.eventBanner.style.removeProperty('--event-glow');ui.word.style.fontSize='';ui.word.style.lineHeight='';ui.word.textContent='GOL!';ui.word.style.color='';ui.callKicker.textContent='GOL ANI';ui.callIcon.textContent='⚽';ui.callSub.textContent='';ui.callSub.style.color='';ui.play.innerHTML='⏸ &nbsp; DURAKLAT';renderCards();renderGoals();syncUI();}
   const cardEls=[{yellow:$('y0'),red:$('r0')},{yellow:$('y1'),red:$('r1')}];
   function renderCards(pop){
     [0,1].forEach(i=>['yellow','red'].forEach(k=>{
@@ -805,7 +806,7 @@
   const WHISTLE_SVG='<svg viewBox="0 0 64 64" aria-hidden="true"><rect x="4" y="17" width="27" height="13" rx="4" fill="#ffd166"/><rect x="19" y="21" width="8" height="5" rx="2" fill="#08201f" opacity=".8"/><circle cx="40" cy="38" r="17" fill="#ffd166"/><circle cx="40" cy="38" r="5.5" fill="#08201f"/></svg>';
   function showWhistleCard(word,sub,kicker,html){ui.callKicker.textContent=kicker||'HAKEM DÜDÜĞÜ';ui.callIcon.innerHTML=WHISTLE_SVG;if(html){ui.word.innerHTML=html;ui.word.style.fontSize='clamp(48px,14vw,68px)';ui.word.style.lineHeight='.92';}else{ui.word.style.fontSize='';ui.word.style.lineHeight='';ui.word.textContent=word;}ui.word.style.color='';ui.callSub.textContent=sub;ui.callSub.style.color='#eaf8ee';ui.overlay.classList.add('visible');}
   function clampCard(v,hi){v=Math.round(+v||0);return Math.max(0,Math.min(hi,v));}
-  function cardTargets(){const p=settings.cardPlan=settings.cardPlan||{};return{y0:clampCard(p.y0,6),r0:clampCard(p.r0,2),y1:clampCard(p.y1,6),r1:clampCard(p.r1,2)};}
+  function cardTargets(){const p=settings.cardPlan=settings.cardPlan||{};return{y0:clampCard(p.y0,3),r0:clampCard(p.r0,2),y1:clampCard(p.y1,3),r1:clampCard(p.r1,2)};}
   function rebuildCardPlan(fromElapsed){const p=cardTargets(),items=[];[[0,'yellow',p.y0],[0,'red',p.r0],[1,'yellow',p.y1],[1,'red',p.r1]].forEach(([id,key,target])=>{for(let n=cards[id][key];n<target;n++)items.push({key,id,t:0});});const hi=Math.max(1.6,DUR()-1.5),lo=Math.min(Math.max(0.8,fromElapsed+0.7),hi-0.3);const n=items.length,span=Math.max(0.5,hi-lo);const minGap=Math.max(2.5,Math.min(8,span/(n+1)));items.forEach((it,i)=>{it.t=Math.min(hi,lo+span*(i+rand(0.25,0.75))/Math.max(1,n)+rand(-0.8,0.8));});items.sort((a,b)=>a.t-b.t);for(let i=1;i<n;i++){if(items[i].t-items[i-1].t<minGap)items[i].t=Math.min(hi,items[i-1].t+minGap);}cardPlan=items;}
   function announceCard(key,id){const ev=RANDOM_EVENTS[key];cards[id][key]++;const detail=teamName(id)+' · '+(key==='yellow'?cards[id].yellow+'. SARI KART':cards[id].red+'. KIRMIZI KART');renderCards({id,key});ui.eventWord.textContent=ev.title;ui.eventIcon.textContent=ev.icon;ui.eventKicker.textContent=ev.kicker;ui.eventSub.textContent=detail;ui.eventBanner.style.setProperty('--event-color',ev.color);ui.eventBanner.style.setProperty('--event-glow',rgba(ev.color,.24));ui.eventBanner.classList.add('visible');eventFlash=settings.textTimes.event;eventStatus=ev.title+' · '+teamName(id);eventColor=ev.color;if(goalFlash<=0){ui.status.textContent=eventStatus;ui.status.style.color=eventColor;}const b=balls.find(x=>x.id===id&&x.inNet<=0);if(b){burst(b.x,b.y,ev.color,key==='red'?18:12);if(key==='red')shake=5;}}
   function varClearOverlay(){ui.overlay.classList.remove('visible','var-mode','var-valid','var-cancel','var-done');ui.overlay.style.removeProperty('--call-glow');ui.callSub.style.color='';}
@@ -827,6 +828,8 @@
     goalFlash=duration;goalCooldown=Math.max(0.55,duration+0.05);nextEventAt=Math.max(nextEventAt,elapsed+1.2); // gol yazisi paneldeki sure boyunca ekranda kalir
   }
   function startVAR(b){
+    if(varCount>=matchVarCap){directGoal(b);return;}
+    varCount++;
     const id=b.id,check=settings.textTimes.varCheck,verdict=settings.textTimes.varVerdict;
     varState={id,t:0,phase:'check',check,verdict,minute:matchMinute(),valid:elapsed>=DUR()||Math.random()<VAR.chance,reason:VAR.reasons[Math.floor(Math.random()*VAR.reasons.length)]};
     b.inNet=check+verdict+0.15; // inceleme boyunca logo fileden çıkmaz
@@ -993,8 +996,8 @@
      1. Top çember çizgisine değince (d >= R - r) temas kontrolü başlar.
      2. Kale ağzı koordinatı hesaplanır: |ly| <= GW + r*0.9 ise top kale ağzının içindedir.
      3. Top dışa doğru gidiyorsa ve VAR sür請miyorsa → gol adayıdır.
-     4. Ağıza temas (|ly| <= GW + r*0.9): top ASLA SEKMEZ — her temas gol adayıdır ve VAR'a girer.
-     5. VAR: önce 'check' incelemesi, sonra 'verdict' kararı; %66 (VAR.chance) geçerli → gol sayılır,
+     4. Ağıza temas (|ly| <= GW + r*0.9): top ASLA SEKMEZ — VAR hakkı varsa incelemeye, yoksa direkt gole gider.
+     5. Her maç rastgele 0–3 VAR hakkı vardır. VAR: önce 'check', sonra 'verdict'; %66 (VAR.chance) geçerli → gol sayılır,
         aksi hâlde iptal edilir (sebep: OFSAYT). Kota dolduysa (takım MAX_GOALS=6 veya matchGoalCap) geçerli gol bile iptal edilir.
      7. Gol sayılınca: skor +1, gol loguna dakika yazılır, ortada GOL! kartı + tribün kutlaması çıkar;
         golü atan logo, panelde belirlenen yazı süresi boyunca filede (inNet) kalır.
@@ -1063,7 +1066,7 @@
         let ly=-dx*sa+dy*ca; // kale ağzı koordinatı (teğet yön): direkler arası temas her zaman gol
         let inMouth=Math.abs(ly)<=GW+r*0.9;
         if(!varState&&inMouth){
-          // AĞIZA GELEN TOP ASLA SEKMEZ: her temas gol adayıdır, VAR'da değerlendirilir, mutlaka sonuç çıkar.
+          // AĞIZA GELEN TOP ASLA SEKMEZ: VAR hakkı varsa incelenir, hak bittiyse direkt gol olur.
           startVAR(b);
           continue;
         }else{
@@ -1306,7 +1309,7 @@
   // Kart planı: manuel sarı/kırmızı sayıları (0 = kartsız maç)
   const cardIns={y0:$('cy0'),r0:$('cr0'),y1:$('cy1'),r1:$('cr1')};
   function updateCardUI(){const p=cardTargets();cardIns.y0.value=p.y0;cardIns.r0.value=p.r0;cardIns.y1.value=p.y1;cardIns.r1.value=p.r1;for(let i=0;i<2;i++){const col=settings.teams[i].color,d=$('cardDot'+i);if(d){d.style.background=col;d.style.boxShadow='0 0 8px '+col;}$('cardTeam'+i).textContent=teamName(i);}}
-  Object.values(cardIns).forEach(inp=>inp.addEventListener('change',()=>{settings.cardPlan={y0:clampCard(cardIns.y0.value,6),r0:clampCard(cardIns.r0.value,2),y1:clampCard(cardIns.y1.value,6),r1:clampCard(cardIns.r1.value,2)};updateCardUI();rebuildCardPlan(elapsed);save();note('Kart planı güncellendi.',true);}));
+  Object.values(cardIns).forEach(inp=>inp.addEventListener('change',()=>{settings.cardPlan={y0:clampCard(cardIns.y0.value,3),r0:clampCard(cardIns.r0.value,2),y1:clampCard(cardIns.y1.value,3),r1:clampCard(cardIns.r1.value,2)};updateCardUI();rebuildCardPlan(elapsed);save();note('Kart planı güncellendi.',true);}));
 
   // Kayıt modu
   const hideIn=$('hideBtn');
