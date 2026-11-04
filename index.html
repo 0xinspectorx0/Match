@@ -1204,7 +1204,7 @@
       <div class="card-head"><span class="swatch"></span><h3>TAKIM ${i+1}</h3><span class="sub">${i===0?'Skor tablosunda sol':'Skor tablosunda sağ'}</span></div>
       <label class="field"><span>Takım adı</span><input type="text" data-role="name" maxlength="14" placeholder="TAKIM ${i+1}" autocomplete="off" spellcheck="false"></label>
       <div class="field"><span class="field-label">Renk</span><div class="color-row"><input type="color" data-role="color" aria-label="Takım rengi"><div class="presets">${PRESETS.map(c=>`<button type="button" class="preset" data-color="${c}" style="background:${c};color:${c}" aria-label="Renk ${c}"></button>`).join('')}</div></div></div>
-      <div class="field"><span class="field-label">Logo</span><div class="logo-grid">${opts}</div><div class="logo-help">Yüklediğin logo kırpılmadan, en-boy oranı korunarak ve daire içine alınmadan gösterilir.</div></div>
+      <div class="field"><span class="field-label">Logo</span><div class="logo-grid">${opts}</div><div class="logo-help">Logo orijinal dosyasıyla, hiç kırpılmadan veya yeniden boyutlandırılmadan kullanılır. Sahadaki boyutunu logo ölçeği ayarından değiştirebilirsin.</div></div>
       <div class="field scale-field"><span class="field-label">Sahadaki logo ölçeği</span>
         <div class="scale-block">
           <div class="preview-wrap">
@@ -1214,7 +1214,7 @@
           <div class="scale-side">
             <div class="range-row"><input type="range" data-role="scale" min="50" max="180" step="5" aria-label="Sahadaki logo ölçeği"><span class="range-val" data-role="scaleVal">100%</span></div>
             <div class="scale-marks"><span>Küçük</span><span>100%</span><span>Büyük</span></div>
-            <p class="logo-help">Sahadaki topun gerçek oranı. Sürüklerken önizleme ve maç anında güncellenir.</p>
+            <p class="logo-help">Sahadaki logonun boyutu. Sürüklerken önizleme ve maç anında güncellenir.</p>
           </div>
         </div>
       </div>
@@ -1258,12 +1258,8 @@
       const f=fileIn.files&&fileIn.files[0];if(!f)return;
       const rd=new FileReader();
       rd.onload=()=>{const im=new Image();im.onload=()=>{
-        // En-boy oranını koru; kırpmadan yalnızca localStorage'a sığması için büyük görselleri küçült.
-        const MAX=192,sc=Math.min(1,MAX/Math.max(im.width,im.height)),c=document.createElement('canvas');
-        c.width=Math.max(1,Math.round(im.width*sc));c.height=Math.max(1,Math.round(im.height*sc));
-        const g=c.getContext('2d');g.drawImage(im,0,0,c.width,c.height);
-        let data;try{data=c.toDataURL('image/png');}catch(e){data=rd.result;}
-        T().image=data;T().logo='image';loadImage(i);commit();note('Logo yüklendi ✓',true);fileIn.value='';
+        // Orijinal dosyayı aynen kullan: kırpma, kareye dönüştürme veya yeniden boyutlandırma yok.
+        T().image=rd.result;T().logo='image';loadImage(i);commit();note('Orijinal logo yüklendi ✓',true);fileIn.value='';
       };im.onerror=()=>note('Görsel okunamadı, başka bir dosya dene.');im.src=rd.result;};
       rd.readAsDataURL(f);
     });
