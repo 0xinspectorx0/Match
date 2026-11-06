@@ -483,14 +483,13 @@
   function framePath(){ctx.beginPath();ctx.moveTo(PX,-GW-POST/2);ctx.lineTo(BX,-GW-POST/2);ctx.lineTo(BX,GW+POST/2);ctx.lineTo(PX,GW+POST/2);ctx.lineTo(PX,GW-POST/2);ctx.lineTo(BX-POST,GW-POST/2);ctx.lineTo(BX-POST,-GW+POST/2);ctx.lineTo(PX,-GW+POST/2);ctx.closePath();}
   let balls=[],particles=[],elapsed=0,paused=false,finished=false,goalFlash=0,eventFlash=0,last=0,shake=0,goalCooldown=0,actionPause=0,scores=[0,0],matchGoalCap=0,varCount=0,matchVarCap=0;
   let eventDeck=[],nextEventAt=0,eventStatus='',eventColor='',cards=[{yellow:0,red:0},{yellow:0,red:0}],cardPlan=[];
-  const MAX_GOALS=6, CARD_CAPS={yellow:3,red:2}; // takım başına üst sınırlar
+  const MAX_GOALS=6, MATCH_VAR_CHECKS=4, CARD_CAPS={yellow:3,red:2}; // takım başına üst sınırlar ve maç başına zorunlu VAR sayısı
   let goalLog=[[],[]]; // takım başına atılan gollerin maç dakikaları
   let goalAngle=-Math.PI/2; // kale çemberin çizgisi üzerinde bu açıda durur ve döner
   const DUR=()=>settings.duration;
   function rand(a,b){return a+Math.random()*(b-a)}
   // Toplam gol hedefi, yönetim panelindeki minimum ve maksimum değerler arasından rastgele seçilir.
   function rollMatchGoalCap(){const r=settings.goalRange;return Math.floor(rand(r.min,r.max+1));}
-  function rollMatchVarCap(){return Math.floor(rand(0,4));} // her maç rastgele 0–3 VAR hakkı
   function norm(a){while(a>Math.PI)a-=TAU;while(a<-Math.PI)a+=TAU;return a}
   function fmt(s){s=Math.max(0,Math.ceil(s));return String(Math.floor(s/60)).padStart(2,'0')+':'+String(s%60).padStart(2,'0');}
   function makeBall(id,axis,curve){
@@ -739,7 +738,7 @@
     else el.innerHTML=iconSvg(t.logo);}
   // Ayarları sahneye anında yansıt (maçı bozmadan).
   function applyLive(){for(let i=0;i<2;i++){ui.names[i].textContent=teamName(i);renderBadge(i);}renderGoals();document.body.classList.toggle('hide-admin-btn',settings.hideButton);syncUI();drawPreviews((typeof performance!=='undefined'?performance.now():0)/1000);}
-  function reset(){varState=null;balls=makeBallPair();particles=[];elapsed=0;paused=false;finished=false;goalFlash=0;eventFlash=0;goalCooldown=0;actionPause=0;scores=[0,0];matchGoalCap=rollMatchGoalCap();varCount=0;matchVarCap=rollMatchVarCap();cards=[{yellow:0,red:0},{yellow:0,red:0}];goalLog=[[],[]];eventDeck=[];nextEventAt=rand(1.1,1.8);rebuildCardPlan(0);spawnCrowd();eventStatus='';eventColor='';goalAngle=-Math.PI/2;ui.scores.forEach(e=>e.textContent='0');ui.status.textContent='İLK GOLÜ KİM ATACAK?';ui.status.style.color='';varClearOverlay();ui.eventBanner.classList.remove('visible');ui.eventBanner.style.removeProperty('--event-color');ui.eventBanner.style.removeProperty('--event-glow');ui.word.style.fontSize='';ui.word.style.lineHeight='';ui.word.textContent='GOL!';ui.word.style.color='';ui.callKicker.textContent='GOL ANI';ui.callIcon.textContent='⚽';ui.callSub.textContent='';ui.callSub.style.color='';ui.play.innerHTML='⏸ &nbsp; DURAKLAT';renderCards();renderGoals();syncUI();}
+  function reset(){varState=null;balls=makeBallPair();particles=[];elapsed=0;paused=false;finished=false;goalFlash=0;eventFlash=0;goalCooldown=0;actionPause=0;scores=[0,0];matchGoalCap=rollMatchGoalCap();varCount=0;matchVarCap=MATCH_VAR_CHECKS;cards=[{yellow:0,red:0},{yellow:0,red:0}];goalLog=[[],[]];eventDeck=[];nextEventAt=rand(1.1,1.8);rebuildCardPlan(0);spawnCrowd();eventStatus='';eventColor='';goalAngle=-Math.PI/2;ui.scores.forEach(e=>e.textContent='0');ui.status.textContent='İLK GOLÜ KİM ATACAK?';ui.status.style.color='';varClearOverlay();ui.eventBanner.classList.remove('visible');ui.eventBanner.style.removeProperty('--event-color');ui.eventBanner.style.removeProperty('--event-glow');ui.word.style.fontSize='';ui.word.style.lineHeight='';ui.word.textContent='GOL!';ui.word.style.color='';ui.callKicker.textContent='GOL ANI';ui.callIcon.textContent='⚽';ui.callSub.textContent='';ui.callSub.style.color='';ui.play.innerHTML='⏸ &nbsp; DURAKLAT';renderCards();renderGoals();syncUI();}
   const cardEls=[{yellow:$('y0'),red:$('r0')},{yellow:$('y1'),red:$('r1')}];
   function renderCards(pop){
     [0,1].forEach(i=>['yellow','red'].forEach(k=>{
@@ -806,7 +805,7 @@
       }
     }
   }
-  /* ---------- VAR & Gol: her gol VAR'a gitmez, rastgele girer ---------- */
+  /* ---------- VAR & Gol: her maçta dört kontrol tamamlanır; sonraki goller direkt sayılır ---------- */
   const VAR={chance:0.66,reasons:['OFSAYT']}; // İnceleme ve karar süreleri yönetim panelindeki yazı sürelerinden okunur.
   let varState=null;
   const scoreLine=()=>teamName(0)+' '+scores[0]+' – '+scores[1]+' '+teamName(1);
@@ -891,8 +890,10 @@
     nextEventAt=Math.max(nextEventAt,elapsed+1.2);
     balls=makeBallPair(); // VAR karari sonrasi hic beklemeden devam
   }
-  function forceRemainingGoal(){
-    const candidates=balls.filter(b=>b.inNet<=0&&scores[b.id]<MAX_GOALS);if(!candidates.length)return;
+  function completeMatchRequirements(){
+    // Gol hedefi dolduktan sonra kalan VAR kontrolleri gol kotasını etkilemeden iptal kararıyla tamamlanır.
+    const needsGoal=scores[0]+scores[1]<matchGoalCap;
+    const candidates=balls.filter(b=>b.inNet<=0&&(!needsGoal||scores[b.id]<MAX_GOALS));if(!candidates.length)return;
     const b=candidates[Math.floor(Math.random()*candidates.length)],m=goalMouth();
     b.x=m.x;b.y=m.y;b.vx=0;b.vy=0;b.inNet=0;b.seekWall=false;startVAR(b);
   }
@@ -971,6 +972,8 @@
   function collideBalls(sm){
     if(balls.length!==2)return;
     const a=balls[0],b=balls[1];if(a.inNet>0||b.inNet>0)return;
+    // Bir önceki çarpışmanın iki zorunlu çember teması da bitmeden yeni top–top çarpışması üretme.
+    if(a.seekWall||b.seekWall)return;
     const ra=ballR(a.id),rb=ballR(b.id);let dx=b.x-a.x,dy=b.y-a.y,d=Math.hypot(dx,dy);
     if(d>=ra+rb)return;
     if(d<1e-6){dx=1;dy=0;d=1e-6;}
@@ -1019,7 +1022,7 @@
      2. Kale ağzı koordinatı hesaplanır: |ly| <= GW + r*0.9 ise top kale ağzının içindedir.
      3. Yalnızca goalOpen açıkken top kaleye yönelir ve gol adayı olabilir.
      4. Gol açıkken ağıza temas topu VAR'a veya direkt gole götürür; gol kapalıysa top kale çizgisine varmadan geri seker.
-     5. Her maç rastgele 0–3 VAR hakkı vardır. VAR: önce 'check', sonra 'verdict'; %66 (VAR.chance) geçerli → gol sayılır,
+     5. Her maç tam 4 VAR kontrolü tamamlanır. VAR: önce 'check', sonra 'verdict'; %66 (VAR.chance) geçerli → gol sayılır,
         aksi hâlde iptal edilir (sebep: OFSAYT). Kota dolduysa (takım MAX_GOALS=6 veya matchGoalCap) geçerli gol bile iptal edilir.
      7. Gol sayılınca: skor +1, gol loguna dakika yazılır, ortada GOL! kartı + tribün kutlaması çıkar;
         golü atan logo, panelde belirlenen yazı süresi boyunca filede (inNet) kalır.
@@ -1112,9 +1115,9 @@
     if(scored)balls=makeBallPair(); // gol sonrası hic beklemeden orta sahadan devam
     hitCool=Math.max(0,hitCool-outerDt);
     particles=particles.filter(p=>p.life>0);for(const p of particles){p.x+=p.vx*dt;p.y+=p.vy*dt;p.vy+=75*dt;p.life-=dt;}
-    // Normal oyun hedefi tamamlayamadıysa son düdüğü bekletilir; eksik goller sırayla ve sınırı aşmadan tamamlanır.
-    if(elapsed>=DUR()&&!varState&&actionPause<=0&&scores[0]+scores[1]<matchGoalCap)forceRemainingGoal();
-    if(elapsed>=DUR()&&scores[0]+scores[1]>=matchGoalCap){finished=true;if(recording)stopRec();whistle(2);if(scores[0]!==scores[1]){const w=scores[0]>scores[1]?0:1;crowdBoost[w]=2.0;punchChant(w,'chant');}else{crowdBoost[0]=0.85;crowdBoost[1]=0.85;}goalFlash=0;eventFlash=0;varState=null;varClearOverlay();ui.eventBanner.classList.remove('visible');ui.eventBanner.style.removeProperty('--event-color');ui.eventBanner.style.removeProperty('--event-glow');ui.status.style.color='';ui.status.textContent=scores[0]===scores[1]?'BERABERE!':'KAZANAN: '+teamName(scores[0]>scores[1]?0:1)+'!';showWhistleCard('MAÇ SONU','','FİNAL DÜDÜĞÜ');ui.play.innerHTML='▶ &nbsp; TEKRAR OYNA';} // final düdüğü/maç sonu kartında alt yazı yok
+    // Son düdük; eksik goller ve dört VAR kontrolü sırayla tamamlanana kadar bekletilir.
+    if(elapsed>=DUR()&&!varState&&actionPause<=0&&(scores[0]+scores[1]<matchGoalCap||varCount<matchVarCap))completeMatchRequirements();
+    if(elapsed>=DUR()&&!varState&&actionPause<=0&&scores[0]+scores[1]>=matchGoalCap&&varCount>=matchVarCap){finished=true;if(recording)stopRec();whistle(2);if(scores[0]!==scores[1]){const w=scores[0]>scores[1]?0:1;crowdBoost[w]=2.0;punchChant(w,'chant');}else{crowdBoost[0]=0.85;crowdBoost[1]=0.85;}goalFlash=0;eventFlash=0;varState=null;varClearOverlay();ui.eventBanner.classList.remove('visible');ui.eventBanner.style.removeProperty('--event-color');ui.eventBanner.style.removeProperty('--event-glow');ui.status.style.color='';ui.status.textContent=scores[0]===scores[1]?'BERABERE!':'KAZANAN: '+teamName(scores[0]>scores[1]?0:1)+'!';showWhistleCard('MAÇ SONU','','FİNAL DÜDÜĞÜ');ui.play.innerHTML='▶ &nbsp; TEKRAR OYNA';} // final düdüğü/maç sonu kartında alt yazı yok
   }
   function line(x1,y1,x2,y2,color,width=1){ctx.strokeStyle=color;ctx.lineWidth=width;ctx.beginPath();ctx.moveTo(x1,y1);ctx.lineTo(x2,y2);ctx.stroke();}
   // Yüklenen görseller kırpılmaz: en-boy oranı korunur ve dairesel top zemini çizilmez.
