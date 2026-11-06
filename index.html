@@ -475,6 +475,8 @@
      SAHNE / OYUN
      ========================================================= */
   const canvas=$('game'), ctx=canvas.getContext('2d');
+  // Maç öncesi zemini ayrı bir yüzeye alarak logoları ve skorları net bırak.
+  const blurCanvas=document.createElement('canvas'), blurCtx=blurCanvas.getContext('2d');
   const stageEl=document.querySelector('.stage');
   let startPendingAt=0,preMatchVisible=true; // BAŞLAT'a basılınca 1 sn geri sayım ve maç öncesi X - Y görünümü
   const ui={timer:$('timer'),timerLabel:$('timerLabel'),scores:[$('score0'),$('score1')],names:[$('name0'),$('name1')],badges:[$('badge0'),$('badge1')],status:$('status'),overlay:$('goalOverlay'),word:$('goalWord'),callKicker:$('callKicker'),callIcon:$('callIcon'),callSub:$('callSub'),eventBanner:$('eventBanner'),eventIcon:$('eventIcon'),eventKicker:$('eventKicker'),eventWord:$('eventWord'),eventSub:$('eventSub'),progress:$('progress'),fuseSpark:$('fuseSpark'),play:$('playBtn'),reset:$('resetBtn'),rec:$('recBtn')};
@@ -1218,8 +1220,17 @@
     ctx.save();ctx.strokeStyle='#f0fffa';ctx.lineWidth=1.2;ctx.lineCap='round';ctx.beginPath();ctx.arc(CX,CY,R,a0,a1);ctx.stroke();ctx.restore();
     // Kale yönünü gösteren küçük ok işareti.
 
-    if(preMatchVisible)drawPreMatchLogos();
-    else for(const b of balls){
+    if(preMatchVisible){
+      if(blurCanvas.width!==canvas.width||blurCanvas.height!==canvas.height){blurCanvas.width=canvas.width;blurCanvas.height=canvas.height;}
+      blurCtx.clearRect(0,0,blurCanvas.width,blurCanvas.height);
+      blurCtx.drawImage(canvas,0,0);
+      ctx.save();ctx.setTransform(1,0,0,1,0,0);
+      ctx.clearRect(0,0,canvas.width,canvas.height);
+      ctx.filter=`blur(${4*canvas.width/W}px)`;
+      ctx.drawImage(blurCanvas,0,0);ctx.filter='none';ctx.restore();
+      ctx.save();ctx.fillStyle='rgba(3,17,18,.2)';ctx.fillRect(0,0,W,H);ctx.restore();
+      drawPreMatchLogos();
+    } else for(const b of balls){
       const col=teamColor(b.id), r=ballR(b.id);
       for(let i=0;i<b.trail.length;i++){let p=b.trail[i];ctx.beginPath();ctx.fillStyle=rgba(col,i/b.trail.length*.16);ctx.arc(p.x,p.y,r*(.35+i/b.trail.length*.5),0,TAU);ctx.fill();}
       ctx.save();ctx.translate(b.x,b.y);if(!hasCustomLogo(b.id))ctx.rotate(b.angle);drawBallArt(ctx,b.id,col,r);ctx.restore();
