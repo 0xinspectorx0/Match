@@ -933,8 +933,7 @@
     const near=Math.max(0,Math.min(1,(d-R*.45)/(R*.45))),side=Math.abs(ly)>1?Math.sign(ly):(b.id?1:-1);
     const tx=-sa*side,ty=ca*side,tangent=b.vx*tx+b.vy*ty,desired=125*sm*near;
     if(tangent<desired){const push=(desired-tangent)*Math.min(1,8*dt);b.vx+=tx*push;b.vy+=ty*push;}
-    const outward=b.vx*ca+b.vy*sa,limit=Math.max(0,(R-r-10-lx)*8);
-    if(outward>limit){b.vx-=ca*(outward-limit);b.vy-=sa*(outward-limit);}
+    const outward=b.vx*ca+b.vy*sa;if(outward>0){const brake=Math.min(1,(4+8*near)*dt);b.vx-=ca*outward*brake;b.vy-=sa*outward*brake;}
   }
   function enforceBounceCycle(dt,sm,goalOpen){
     if(balls.length!==2)return;
@@ -1066,8 +1065,9 @@
       let turn=rand(-1,1)*1.8*sm*dt,cs=Math.cos(turn),sn=Math.sin(turn),vx=b.vx;
       b.vx=vx*cs-b.vy*sn;b.vy=vx*sn+b.vy*cs;
 
-      // Zorunlu çember turunda kale çekimi yoktur; buna rağmen kale ağzına ulaşılırsa gol değerlendirilir.
+      // Zorunlu çember turunda kale çekimi ve gol algısı kapalıdır; çemberden sektikten sonra normale döner.
       if(goalOpen&&!b.seekWall){const m=goalMouth();b.vx+=(m.x-b.x)*0.62*sm*dt;b.vy+=(m.y-b.y)*0.62*sm*dt;}
+      else if(!goalOpen)steerFromClosedGoal(b,dt,sm,ballR(b.id));
 
       // Hız düzenleme YUMUŞAK: çarpışmadan gelen ekstra hız sürtünmeyle yavaş söner, yavaşlayan logo kendi "motoru" ile toparlanır
       let speed=Math.hypot(b.vx,b.vy)||1;
@@ -1076,27 +1076,22 @@
       else if(speed<minSpd){let k=Math.min(minSpd/speed,1+2.4*sm*dt);b.vx*=k;b.vy*=k;}
       if(b.spin===undefined)b.spin=(b.id?2.2:-2.5)*sm;
       const baseSpin=(b.id?2.2:-2.5)*sm;b.spin+=(baseSpin-b.spin)*Math.min(1,0.9*sm*dt); // dönme de yavaşça doğal hızına döner
-      if(!goalOpen)steerFromClosedGoal(b,dt,sm,ballR(b.id));
       b.x+=b.vx*dt;b.y+=b.vy*dt;b.angle+=b.spin*dt;
       let r=ballR(b.id), dx=b.x-CX,dy=b.y-CY,d=Math.hypot(dx,dy);
       if(d>=R-r-6){
         let ca=Math.cos(goalAngle),sa=Math.sin(goalAngle);
         let ly=-dx*sa+dy*ca,inMouth=Math.abs(ly)<=GW+r*0.9;
-        const closedMouth=!goalOpen&&Math.abs(ly)<=GW+r*0.9+10;
-        if(closedMouth){
-          // Kale kapalıyken önünde sekme yok: çizgiye ulaşmadan yanal ve içeri yönlen.
-          const nx=dx/d,ny=dy/d,side=Math.abs(ly)>1?Math.sign(ly):(b.id?1:-1),tx=-ny*side,ty=nx*side;
-          b.x=CX+nx*(R-r-6.1);b.y=CY+ny*(R-r-6.1);
-          const speed=Math.max(95*sm,Math.hypot(b.vx,b.vy)*.65);b.vx=tx*speed-nx*45*sm;b.vy=ty*speed-ny*45*sm;
-        }else if(d>=R-r){
-          if(goalOpen&&!varState&&inMouth){
-            // Kale ağzına gelen her top gol üretir; VAR hakkı varsa incelenir, yoksa direkt gol olur.
+        // Gol kapalıyken kale ağzı ve direk çevresinde çizgiye varmadan önce geri sek.
+        const closedGuard=!goalOpen&&Math.abs(ly)<=GW+r*0.9+10,boundary=R-r-(closedGuard?6:0);
+        if(d>=boundary){
+          if(!b.seekWall&&goalOpen&&!varState&&inMouth){
+            // Zorunlu çember turu tamamlanmışsa ağız teması gol üretir.
             startVAR(b);
             continue;
           }else{
             let nx=dx/d,ny=dy/d;
             // Sınırın biraz içine yerleştir: kayan nokta hataları ve tekrar tekrar temas algısı oluşmasın.
-            b.x=CX+nx*(R-r-0.9);b.y=CY+ny*(R-r-0.9);
+            b.x=CX+nx*(boundary-0.9);b.y=CY+ny*(boundary-0.9);
             let dot=b.vx*nx+b.vy*ny;
             if(dot>0){wallBounce(b,nx,ny,dot,r);}
             else if(dot>-PHYS.minWallExit*sm){
