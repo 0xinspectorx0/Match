@@ -210,6 +210,9 @@
   .range-row { display:flex; align-items:center; gap:10px; }
   .range-row input[type=range] { flex:1; accent-color:#9ce9bb; margin:0; }
   .range-val { min-width:46px; text-align:right; font-weight:900; font-variant-numeric:tabular-nums; font-size:13px; }
+  .scale-manual { display:flex; align-items:center; justify-content:space-between; gap:8px; margin-top:9px; color:#b8d8ca; font-size:10px; font-weight:800; }
+  .scale-manual .numwrap { width:82px; }
+  .scale-manual input { text-align:right; }
   .field-head-row { display:flex; align-items:baseline; justify-content:space-between; margin-bottom:5px; }
   .field-head-row .field-label { margin-bottom:0; }
   .field-head-row .range-val { font-size:11px; color:#b8e7cd; font-weight:800; min-width:auto; text-align:right; }
@@ -471,7 +474,7 @@
      ========================================================= */
   const canvas=$('game'), ctx=canvas.getContext('2d');
   const stageEl=document.querySelector('.stage');
-  let startPendingAt=0; // BAŞLAT'a basılınca 1 sn geri sayım
+  let startPendingAt=0,preMatchVisible=true; // BAŞLAT'a basılınca 1 sn geri sayım ve maç öncesi X - Y görünümü
   const ui={timer:$('timer'),timerLabel:$('timerLabel'),scores:[$('score0'),$('score1')],names:[$('name0'),$('name1')],badges:[$('badge0'),$('badge1')],status:$('status'),overlay:$('goalOverlay'),word:$('goalWord'),callKicker:$('callKicker'),callIcon:$('callIcon'),callSub:$('callSub'),eventBanner:$('eventBanner'),eventIcon:$('eventIcon'),eventKicker:$('eventKicker'),eventWord:$('eventWord'),eventSub:$('eventSub'),progress:$('progress'),fuseSpark:$('fuseSpark'),play:$('playBtn'),reset:$('resetBtn'),rec:$('recBtn')};
   const W=400,H=711,CX=200,CY=398,R=147,BR=17,NET=36,HALF_GAP=0.36;
   const ballR=id=>BR*(settings.teams[id].scale||1);
@@ -1126,7 +1129,8 @@
   }
   function drawLogoOn(c,i,col,r){
     const t=settings.teams[i];
-    if(hasCustomLogo(i)){const size=r*1.9;drawContainedImage(c,logoImgs[i],0,0,size,size);return;}
+    // Kare görselin köşegen yarıçapı da top yarıçapını aşmasın; böylece yüklenen logo çemberden taşmaz.
+    if(hasCustomLogo(i)){const size=r*Math.SQRT2;drawContainedImage(c,logoImgs[i],0,0,size,size);return;}
     if(t.logo==='letter'||t.logo==='image'){c.fillStyle=col;c.font='950 '+Math.max(8,Math.round(r))+'px Inter, system-ui, sans-serif';c.textAlign='center';c.textBaseline='middle';c.fillText(initial(i),0,1);return;}
     const ic=ICONS[t.logo];if(!ic||!ic.p2d)return;
     c.save();const s=(r*1.4)/24;c.scale(s,s);c.translate(-12,-12);c.fillStyle=col;c.fill(ic.p2d,'evenodd');c.restore();
@@ -1138,6 +1142,25 @@
       c.strokeStyle='#ffffff54';c.lineWidth=1;c.beginPath();c.arc(0,0,Math.max(2,r-4),0,TAU);c.stroke();
     }
     drawLogoOn(c,i,col,r);
+  }
+  // Maç öncesi iki logo çemberin içinde X - Y düzeninde durur; ölçek panelden gelir.
+  function preMatchLayout(){
+    const sizes=[0,1].map(i=>Math.min(112,80*(settings.teams[i].scale||1))),gap=30;
+    return [
+      {x:CX-gap/2-sizes[0]/2,y:CY,size:sizes[0]},
+      {x:CX+gap/2+sizes[1]/2,y:CY,size:sizes[1]}
+    ];
+  }
+  function drawPreMatchLogos(){
+    const layout=preMatchLayout();
+    layout.forEach((p,i)=>{
+      ctx.save();ctx.translate(p.x,p.y);
+      if(hasCustomLogo(i))drawContainedImage(ctx,logoImgs[i],0,0,p.size,p.size);
+      else drawBallArt(ctx,i,teamColor(i),p.size/2);
+      ctx.restore();
+    });
+    ctx.save();ctx.textAlign='center';ctx.textBaseline='middle';ctx.font='950 38px Inter, system-ui, sans-serif';
+    ctx.fillStyle='#eafff6';ctx.shadowColor='#00ffd5';ctx.shadowBlur=16;ctx.fillText('-',CX,CY);ctx.restore();
   }
   // Yönetim paneli: saha topunun canlı önizlemesi (ölçek + logo + renk).
   function drawPreview(i,t){
@@ -1193,7 +1216,8 @@
     ctx.save();ctx.strokeStyle='#f0fffa';ctx.lineWidth=1.2;ctx.lineCap='round';ctx.beginPath();ctx.arc(CX,CY,R,a0,a1);ctx.stroke();ctx.restore();
     // Kale yönünü gösteren küçük ok işareti.
 
-    for(const b of balls){
+    if(preMatchVisible)drawPreMatchLogos();
+    else for(const b of balls){
       const col=teamColor(b.id), r=ballR(b.id);
       for(let i=0;i<b.trail.length;i++){let p=b.trail[i];ctx.beginPath();ctx.fillStyle=rgba(col,i/b.trail.length*.16);ctx.arc(p.x,p.y,r*(.35+i/b.trail.length*.5),0,TAU);ctx.fill();}
       ctx.save();ctx.translate(b.x,b.y);if(!hasCustomLogo(b.id))ctx.rotate(b.angle);drawBallArt(ctx,b.id,col,r);ctx.restore();
@@ -1201,9 +1225,10 @@
     for(const p of particles){ctx.globalAlpha=Math.max(0,p.life/p.max);ctx.fillStyle=p.color;ctx.fillRect(p.x,p.y,p.size,p.size);}ctx.globalAlpha=1;ctx.restore();
   }
   function frame(ms){if(!last)last=ms;let dt=Math.min((ms-last)/1000,.033);last=ms;if(startPendingAt&&ms>=startPendingAt){beginNow();ui.status.textContent='İLK GOLÜ KİM ATACAK?';}update(dt);draw(ms/1000);if(recording)compositeRec();if(isOpen())drawPreviews(ms/1000);requestAnimationFrame(frame);}
-  function beginNow(){startPendingAt=0;paused=false;stageEl.classList.add('playing');ui.play.innerHTML='⏸ &nbsp; DURAKLAT';}
+  function prepareMatch(){reset();paused=true;startPendingAt=0;preMatchVisible=true;stageEl.classList.remove('playing');ui.play.innerHTML='▶ &nbsp; BAŞLAT';ui.status.textContent='';}
+  function beginNow(){startPendingAt=0;paused=false;preMatchVisible=false;stageEl.classList.add('playing');ui.play.innerHTML='⏸ &nbsp; DURAKLAT';}
   ui.play.addEventListener('click',()=>{
-    if(finished){reset();beginNow();return;}
+    if(finished){prepareMatch();return;}
     if(paused&&elapsed<=0&&!startPendingAt){ // ilk BAŞLAT: butonlar gizlenir, 1 sn sonra oyun başlar
       stageEl.classList.add('playing');ui.play.innerHTML='…';ui.status.textContent='BAŞLIYOR…';
       startPendingAt=performance.now()+1000;return;
@@ -1211,7 +1236,7 @@
     startPendingAt=0;paused=!paused;stageEl.classList.toggle('playing',!paused&&!finished);
     ui.play.innerHTML=paused?'▶ &nbsp; DEVAM ET':'⏸ &nbsp; DURAKLAT';
   });
-  ui.reset.addEventListener('click',()=>{reset();beginNow();});
+  ui.reset.addEventListener('click',prepareMatch);
 
   /* =========================================================
      YÖNETİM PANELİ
@@ -1237,7 +1262,7 @@
       <label class="field"><span>Takım adı</span><input type="text" data-role="name" placeholder="TAKIM ${i+1}" autocomplete="off" spellcheck="false"></label>
       <div class="field"><span class="field-label">Renk</span><div class="color-row"><input type="color" data-role="color" aria-label="Takım rengi"><div class="presets">${PRESETS.map(c=>`<button type="button" class="preset" data-color="${c}" style="background:${c};color:${c}" aria-label="Renk ${c}"></button>`).join('')}</div></div></div>
       <div class="field"><span class="field-label">Logo</span><div class="logo-grid">${opts}</div><div class="logo-help">Logo orijinal dosyasıyla, hiç kırpılmadan veya yeniden boyutlandırılmadan kullanılır. Sahadaki boyutunu logo ölçeği ayarından değiştirebilirsin.</div></div>
-      <div class="field scale-field"><span class="field-label">Sahadaki logo ölçeği</span>
+      <div class="field scale-field"><span class="field-label">Logo ölçeği (saha + maç öncesi)</span>
         <div class="scale-block">
           <div class="preview-wrap">
             <canvas data-role="preview" width="208" height="208" aria-hidden="true"></canvas>
@@ -1246,7 +1271,8 @@
           <div class="scale-side">
             <div class="range-row"><input type="range" data-role="scale" min="50" max="180" step="5" aria-label="Sahadaki logo ölçeği"><span class="range-val" data-role="scaleVal">100%</span></div>
             <div class="scale-marks"><span>Küçük</span><span>100%</span><span>Büyük</span></div>
-            <p class="logo-help">Sahadaki logonun boyutu. Sürüklerken önizleme ve maç anında güncellenir.</p>
+            <label class="scale-manual"><span>Manuel ölçek</span><span class="numwrap"><input type="number" class="num" data-role="scaleNumber" min="50" max="180" step="5" inputmode="numeric" aria-label="Manuel logo ölçeği"><small>%</small></span></label>
+            <p class="logo-help">Saha ve maç öncesindeki logonun boyutu. Maç öncesi logolar çemberi taşmayacak şekilde otomatik sınırlanır.</p>
           </div>
         </div>
       </div>
@@ -1260,7 +1286,7 @@
     const nameIn=card.querySelector('[data-role=name]'), colorIn=card.querySelector('[data-role=color]'), swatch=card.querySelector('.swatch');
     const imgOpt=card.querySelector('.logo-opt[data-logo=image]'), upLabel=imgOpt.querySelector('[data-role=upLabel]'), fileIn=imgOpt.querySelector('input[type=file]');
     const letterEl=card.querySelector('.logo-opt[data-logo=letter] .letter');
-    const scaleIn=card.querySelector('[data-role=scale]'), scaleVal=card.querySelector('[data-role=scaleVal]');
+    const scaleIn=card.querySelector('[data-role=scale]'), scaleNumber=card.querySelector('[data-role=scaleNumber]'), scaleVal=card.querySelector('[data-role=scaleVal]');
     const previewCv=card.querySelector('[data-role=preview]');
     if(previewCv){
       const dpr=Math.min(window.devicePixelRatio||1,3);
@@ -1270,7 +1296,7 @@
     function refresh(){
       if(nameIn.value!==T().name)nameIn.value=T().name;
       colorIn.value=T().color;swatch.style.color=T().color;letterEl.textContent=initial(i);
-      const pct=Math.round((T().scale||1)*100);scaleIn.value=pct;scaleVal.textContent=pct+'%';
+      const pct=Math.round((T().scale||1)*100);scaleIn.value=pct;scaleNumber.value=pct;scaleVal.textContent=pct+'%';
       card.querySelectorAll('.preset').forEach(p=>p.classList.toggle('active',p.dataset.color.toLowerCase()===T().color.toLowerCase()));
       card.querySelectorAll('.logo-opt').forEach(o=>{o.classList.toggle('active',o.dataset.logo===T().logo);o.style.color=T().color;});
       let img=imgOpt.querySelector('img');
@@ -1279,7 +1305,9 @@
     }
     refreshers.push(refresh);
     const commit=()=>{refresh();applyLive();save();};
-    scaleIn.addEventListener('input',()=>{T().scale=Math.min(1.8,Math.max(0.5,(+scaleIn.value)/100));scaleVal.textContent=Math.round(T().scale*100)+'%';applyLive();save();});
+    const setScale=pct=>{pct=Math.min(180,Math.max(50,Math.round((+pct||100)/5)*5));T().scale=pct/100;commit();};
+    scaleIn.addEventListener('input',()=>setScale(scaleIn.value));
+    scaleNumber.addEventListener('change',()=>setScale(scaleNumber.value));
     scaleIn.addEventListener('dblclick',()=>{T().scale=1;commit();});
     nameIn.addEventListener('input',()=>{T().name=nameIn.value;commit();});
     colorIn.addEventListener('input',()=>{if(isHex(colorIn.value)){T().color=colorIn.value;commit();}});
@@ -1457,8 +1485,7 @@
   $('recClose').addEventListener('click',()=>{$('recPreview').hidden=true;const v=$('recVideo');v.pause();v.removeAttribute('src');v.load();});
 
   /* ---------- Başlat ---------- */
-  loadImage(0);loadImage(1);refreshAll();applyLive();closePanel();reset();
-  paused=true;startPendingAt=0;stageEl.classList.remove('playing');ui.play.innerHTML='▶ &nbsp; BAŞLAT';ui.status.textContent=''; // kullanıcı başlatmadan oyun başlamaz, bu yazı gösterilmez
+  loadImage(0);loadImage(1);refreshAll();applyLive();closePanel();prepareMatch(); // kullanıcı başlatmadan oyun başlamaz; logolar çemberde X - Y biçiminde durur
   const dpr=Math.min(window.devicePixelRatio||1,3);canvas.width=W*dpr;canvas.height=H*dpr;ctx.scale(dpr,dpr);requestAnimationFrame(frame);
 })();
 </script>
