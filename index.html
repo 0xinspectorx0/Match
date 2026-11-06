@@ -944,8 +944,8 @@
       for(const q of balls){
         if(!q.seekWall)continue;
         let dx=q.x-CX,dy=q.y-CY,d=Math.hypot(dx,dy)||1,ang=Math.atan2(dy,dx);
-        // Kapalı kale sektöründe dışa yönelme uygulanmaz; top yalnızca başka yönlerde çembere gider.
-        if(!goalOpen){const ca=Math.cos(goalAngle),sa=Math.sin(goalAngle),lx=dx*ca+dy*sa,ly=-dx*sa+dy*ca;if(lx>=0&&Math.abs(ly)<=GW+ballR(q.id)+26)continue;}
+        // Kapalı kalede bile zorunlu çember turu atlanmaz; hedef, kale ağzının dışındaki en yakın güvenli noktadır.
+        if(!goalOpen){const margin=HALF_GAP+Math.min(.42,(ballR(q.id)+18)/R),relative=norm(ang-goalAngle);if(Math.abs(relative)<margin){const side=relative===0?(q.id?1:-1):Math.sign(relative);ang=goalAngle+side*margin;}}
         const nx=Math.cos(ang),ny=Math.sin(ang);
         const radial=q.vx*nx+q.vy*ny,target=130*sm;
         if(radial<target){const push=(target-radial)*alpha;q.vx+=nx*push;q.vy+=ny*push;}
@@ -1065,9 +1065,9 @@
       let turn=rand(-1,1)*1.8*sm*dt,cs=Math.cos(turn),sn=Math.sin(turn),vx=b.vx;
       b.vx=vx*cs-b.vy*sn;b.vy=vx*sn+b.vy*cs;
 
-      // Yalnızca gol mümkünken kale çekimi uygulanır; kapalı kalede top bölgeden uzaklaştırılır.
-      if(goalOpen){const m=goalMouth();b.vx+=(m.x-b.x)*0.62*sm*dt;b.vy+=(m.y-b.y)*0.62*sm*dt;}
-      else steerFromClosedGoal(b,dt,sm,ballR(b.id));
+      // Zorunlu çember turunda kale çekimi ve gol algısı kapalıdır; çemberden sektikten sonra normale döner.
+      if(goalOpen&&!b.seekWall){const m=goalMouth();b.vx+=(m.x-b.x)*0.62*sm*dt;b.vy+=(m.y-b.y)*0.62*sm*dt;}
+      else if(!goalOpen)steerFromClosedGoal(b,dt,sm,ballR(b.id));
 
       // Hız düzenleme YUMUŞAK: çarpışmadan gelen ekstra hız sürtünmeyle yavaş söner, yavaşlayan logo kendi "motoru" ile toparlanır
       let speed=Math.hypot(b.vx,b.vy)||1;
@@ -1084,8 +1084,8 @@
         // Gol kapalıyken kale ağzı ve direk çevresinde çizgiye varmadan önce geri sek.
         const closedGuard=!goalOpen&&Math.abs(ly)<=GW+r*0.9+10,boundary=R-r-(closedGuard?6:0);
         if(d>=boundary){
-          if(goalOpen&&!varState&&inMouth){
-            // AĞIZA GELEN TOP ASLA SEKMEZ: VAR hakkı varsa incelenir, hak bittiyse direkt gol olur.
+          if(!b.seekWall&&goalOpen&&!varState&&inMouth){
+            // Zorunlu çember turu tamamlanmışsa ağız teması gol üretir.
             startVAR(b);
             continue;
           }else{
