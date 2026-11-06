@@ -20,19 +20,6 @@
   .stage:before { content:""; position:absolute; inset:0; z-index:0; pointer-events:none; opacity:.28; background:repeating-linear-gradient(0deg,transparent 0px,transparent 3px,#ffffff08 4px), radial-gradient(circle at 50% 38%,#74e3b718,transparent 55%); }
   .stage:after { content:""; position:absolute; inset:10px; border:1px solid #d4fff014; pointer-events:none; z-index:5; }
   canvas { position:absolute; inset:0; width:100%; height:100%; z-index:1; }
-  /* Maç öncesi: GS solda, AMED sağda; iki büyük logo ve ortada / ayırıcısı. */
-  .prematch { position:absolute; inset:0; z-index:20; display:grid; grid-template-columns:1fr 1fr; overflow:hidden; pointer-events:none; background:#071719; }
-  .prematch[hidden] { display:none; }
-  .prematch-side { position:relative; min-width:0; height:100%; overflow:hidden; }
-  .prematch-side.left { background:radial-gradient(circle at 65% 42%,#c62d4488,transparent 52%),linear-gradient(145deg,#3b0712,#8f1530 58%,#4d080f); }
-  .prematch-side.right { background:radial-gradient(circle at 35% 42%,#5acb6680,transparent 52%),linear-gradient(215deg,#062f1d,#176433 58%,#650c19); }
-  .prematch-side:after { content:""; position:absolute; inset:0; background:linear-gradient(180deg,#0004,transparent 28%,transparent 66%,#0008); }
-  .prematch-logo { position:absolute; z-index:1; top:50%; width:145%; height:72%; max-width:none; object-fit:contain; filter:drop-shadow(0 18px 28px #0009); transform:translateY(-54%); }
-  .prematch-side.left .prematch-logo { left:-22%; }
-  .prematch-side.right .prematch-logo { right:-22%; }
-  .prematch-slash { position:absolute; z-index:3; left:50%; top:50%; color:#fff; font-size:clamp(220px,58vh,470px); font-weight:200; line-height:1; text-shadow:0 0 12px #000,0 0 42px #000b; transform:translate(-50%,-54%); }
-  .prematch-name { position:absolute; z-index:4; left:0; right:0; bottom:9%; text-align:center; color:#fff; font-size:clamp(25px,7vw,38px); font-weight:950; letter-spacing:.08em; text-shadow:0 3px 15px #000; }
-  .prematch-side.left .prematch-name { color:#ffe066; }
   .top { position:absolute; top:4.25%; left:8%; right:8%; z-index:2; display:flex; align-items:center; justify-content:space-between; }
   .brand { display:flex; align-items:center; gap:8px; color:#d6f8e9; font-size:10px; font-weight:900; letter-spacing:.24em; cursor:default; }
   .brand-mark { width:19px; height:19px; border:2px solid #b2efcf; border-radius:50%; display:grid; place-items:center; }
@@ -286,15 +273,10 @@
 <div class="arena-layout">
 <main class="stage" aria-label="İki logonun çember içinde sektiği, çemberin çizgisi üzerinde dönen kaleli logo arenası">
   <canvas id="game" width="800" height="1422" aria-hidden="true"></canvas>
-  <div class="prematch" id="preMatch" aria-label="GS ve AMED maçı">
-    <div class="prematch-side left"><img class="prematch-logo" src="assets/gs.png" alt="Galatasaray logosu"><span class="prematch-name">GS</span></div>
-    <div class="prematch-side right"><img class="prematch-logo" src="assets/amed.png" alt="AMED logosu"><span class="prematch-name">AMED</span></div>
-    <span class="prematch-slash" aria-hidden="true">/</span>
-  </div>
   <div class="scoreboard" aria-live="polite">
-    <div class="team"><span class="badge" id="badge0"></span><span class="team-score" id="score0">0</span><span class="team-name" id="name0">GS</span></div>
+    <div class="team"><span class="badge" id="badge0"></span><span class="team-score" id="score0">0</span><span class="team-name" id="name0">ALEV</span></div>
     <div class="timer-box"><span class="timer-label" id="timerLabel">1. YARI</span><span id="timer">1'</span></div>
-    <div class="team right"><span class="badge" id="badge1"></span><span class="team-score" id="score1">0</span><span class="team-name" id="name1">AMED</span></div>
+    <div class="team right"><span class="badge" id="badge1"></span><span class="team-score" id="score1">0</span><span class="team-name" id="name1">ŞİMŞEK</span></div>
   </div>
   <div class="cardrow" aria-label="Kart sayıları">
     <div class="cardgroup left"><span class="cchip y" id="y0" title="Sarı kart"><i></i><b>0</b></span><span class="cchip r" id="r0" title="Kırmızı kart"><i></i><b>0</b></span></div>
@@ -406,7 +388,7 @@
   const spdLabel=()=>(SPEED_CONFIG[settings.speed]||SPEED_CONFIG[1]).label;
 
   const DEFAULTS={
-    teams:[{name:'GS',color:'#ffbf00',logo:'image',image:'assets/gs.png',scale:1},{name:'AMED',color:'#4caf50',logo:'image',image:'assets/amed.png',scale:1}],
+    teams:[{name:'ALEV',color:'#ff8758',logo:'flame',image:null,scale:1},{name:'ŞİMŞEK',color:'#6ce5e5',logo:'bolt',image:null,scale:1}],
     duration:60, speed:1, cardPlan:{y0:1,r0:0,y1:1,r1:0}, goalRange:{min:0,max:6}, textTimes:{varCheck:0.5,varVerdict:0.5,event:0.5,half:0.5}, title1:'BİR ÇEMBER.', title2:'DÖNEN KALE.', hideButton:false
   };
   const ICONS={
@@ -440,8 +422,7 @@
       if(typeof t.name!=='string')t.name=d.name;
       if(!isHex(t.color))t.color=d.color;
       if(!(t.logo in ICONS)&&t.logo!=='letter'&&t.logo!=='image')t.logo=d.logo;
-      const bundled=t.image===DEFAULTS.teams[0].image||t.image===DEFAULTS.teams[1].image;
-      if(typeof t.image!=='string'||(!t.image.startsWith('data:image/')&&!bundled))t.image=null;
+      if(typeof t.image!=='string'||!t.image.startsWith('data:image/'))t.image=null;
       if(t.logo==='image'&&!t.image)t.logo=d.logo;
       t.scale=Math.min(1.8,Math.max(0.5,Math.round((+t.scale||1)*20)/20));
       return t;
@@ -489,7 +470,7 @@
      SAHNE / OYUN
      ========================================================= */
   const canvas=$('game'), ctx=canvas.getContext('2d');
-  const stageEl=document.querySelector('.stage'),preMatch=$('preMatch');
+  const stageEl=document.querySelector('.stage');
   let startPendingAt=0; // BAŞLAT'a basılınca 1 sn geri sayım
   const ui={timer:$('timer'),timerLabel:$('timerLabel'),scores:[$('score0'),$('score1')],names:[$('name0'),$('name1')],badges:[$('badge0'),$('badge1')],status:$('status'),overlay:$('goalOverlay'),word:$('goalWord'),callKicker:$('callKicker'),callIcon:$('callIcon'),callSub:$('callSub'),eventBanner:$('eventBanner'),eventIcon:$('eventIcon'),eventKicker:$('eventKicker'),eventWord:$('eventWord'),eventSub:$('eventSub'),progress:$('progress'),fuseSpark:$('fuseSpark'),play:$('playBtn'),reset:$('resetBtn'),rec:$('recBtn')};
   const W=400,H=711,CX=200,CY=398,R=147,BR=17,NET=36,HALF_GAP=0.36;
@@ -1220,11 +1201,9 @@
     for(const p of particles){ctx.globalAlpha=Math.max(0,p.life/p.max);ctx.fillStyle=p.color;ctx.fillRect(p.x,p.y,p.size,p.size);}ctx.globalAlpha=1;ctx.restore();
   }
   function frame(ms){if(!last)last=ms;let dt=Math.min((ms-last)/1000,.033);last=ms;if(startPendingAt&&ms>=startPendingAt){beginNow();ui.status.textContent='İLK GOLÜ KİM ATACAK?';}update(dt);draw(ms/1000);if(recording)compositeRec();if(isOpen())drawPreviews(ms/1000);requestAnimationFrame(frame);}
-  function showPreMatch(){preMatch.hidden=false;}
-  function prepareMatch(){reset();paused=true;startPendingAt=0;stageEl.classList.remove('playing');ui.play.innerHTML='▶ &nbsp; BAŞLAT';ui.status.textContent='';showPreMatch();}
-  function beginNow(){startPendingAt=0;paused=false;preMatch.hidden=true;stageEl.classList.add('playing');ui.play.innerHTML='⏸ &nbsp; DURAKLAT';}
+  function beginNow(){startPendingAt=0;paused=false;stageEl.classList.add('playing');ui.play.innerHTML='⏸ &nbsp; DURAKLAT';}
   ui.play.addEventListener('click',()=>{
-    if(finished){prepareMatch();return;}
+    if(finished){reset();beginNow();return;}
     if(paused&&elapsed<=0&&!startPendingAt){ // ilk BAŞLAT: butonlar gizlenir, 1 sn sonra oyun başlar
       stageEl.classList.add('playing');ui.play.innerHTML='…';ui.status.textContent='BAŞLIYOR…';
       startPendingAt=performance.now()+1000;return;
@@ -1232,7 +1211,7 @@
     startPendingAt=0;paused=!paused;stageEl.classList.toggle('playing',!paused&&!finished);
     ui.play.innerHTML=paused?'▶ &nbsp; DEVAM ET':'⏸ &nbsp; DURAKLAT';
   });
-  ui.reset.addEventListener('click',prepareMatch);
+  ui.reset.addEventListener('click',()=>{reset();beginNow();});
 
   /* =========================================================
      YÖNETİM PANELİ
@@ -1478,7 +1457,8 @@
   $('recClose').addEventListener('click',()=>{$('recPreview').hidden=true;const v=$('recVideo');v.pause();v.removeAttribute('src');v.load();});
 
   /* ---------- Başlat ---------- */
-  loadImage(0);loadImage(1);refreshAll();applyLive();closePanel();prepareMatch(); // kullanıcı başlatmadan oyun başlamaz; GS / AMED açılışı ekranı kaplar
+  loadImage(0);loadImage(1);refreshAll();applyLive();closePanel();reset();
+  paused=true;startPendingAt=0;stageEl.classList.remove('playing');ui.play.innerHTML='▶ &nbsp; BAŞLAT';ui.status.textContent=''; // kullanıcı başlatmadan oyun başlamaz, bu yazı gösterilmez
   const dpr=Math.min(window.devicePixelRatio||1,3);canvas.width=W*dpr;canvas.height=H*dpr;ctx.scale(dpr,dpr);requestAnimationFrame(frame);
 })();
 </script>
