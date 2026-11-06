@@ -1070,7 +1070,7 @@
       let turn=rand(-1,1)*1.8*sm*dt,cs=Math.cos(turn),sn=Math.sin(turn),vx=b.vx;
       b.vx=vx*cs-b.vy*sn;b.vy=vx*sn+b.vy*cs;
 
-      // Zorunlu çember turunda kale çekimi ve gol algısı kapalıdır; çemberden sektikten sonra normale döner.
+      // Zorunlu çember turunda kale çekimi yoktur; top yine de kale ağzına ulaşırsa gol olur.
       if(goalOpen&&!b.seekWall){const m=goalMouth();b.vx+=(m.x-b.x)*0.62*sm*dt;b.vy+=(m.y-b.y)*0.62*sm*dt;}
       else if(!goalOpen)steerFromClosedGoal(b,dt,sm,ballR(b.id));
 
@@ -1089,8 +1089,8 @@
         // Gol kapalıyken kale ağzı ve direk çevresinde çizgiye varmadan önce geri sek.
         const closedGuard=!goalOpen&&Math.abs(ly)<=GW+r*0.9+10,boundary=R-r-(closedGuard?6:0);
         if(d>=boundary){
-          if(!b.seekWall&&goalOpen&&!varState&&inMouth){
-            // Zorunlu çember turu tamamlanmışsa ağız teması gol üretir.
+          if(goalOpen&&!varState&&inMouth){
+            // Çarpışma veya çember sekmesi sonrasında kaleye gelen top gol olur; zorunlu çember turu golü engellemez.
             startVAR(b);
             continue;
           }else{
